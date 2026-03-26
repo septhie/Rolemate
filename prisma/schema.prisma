@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  passwordHash  String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  resumes       Resume[]
+  jobProfiles   JobProfile[]
+  feedbackItems Feedback[]
+}
+
+model Resume {
+  id              String           @id @default(cuid())
+  userId          String?
+  originalPdfPath String?
+  extractedText   String           @db.Text
+  structuredJson  Json
+  createdAt       DateTime         @default(now())
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  analyses        Analysis[]
+  improvedResumes ImprovedResume[]
+}
+
+model JobProfile {
+  id              String           @id @default(cuid())
+  userId          String?
+  jobTitle        String?
+  companyName     String?
+  jobDescription  String           @db.Text
+  parsedJson      Json
+  createdAt       DateTime         @default(now())
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  analyses        Analysis[]
+  improvedResumes ImprovedResume[]
+}
+
+model Analysis {
+  id                        String            @id @default(cuid())
+  resumeId                  String
+  jobProfileId              String
+  fitScore                  Int
+  mismatchMatrixJson        Json
+  strengthsJson             Json
+  weaknessesJson            Json
+  missingKeywordsJson       Json
+  redFlagsJson              Json
+  cacheKey                  String?           @unique
+  createdAt                 DateTime          @default(now())
+  resume                    Resume            @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobProfile                JobProfile        @relation(fields: [jobProfileId], references: [id], onDelete: Cascade)
+  verificationLogs          VerificationLog[]
+  improvedResumes           ImprovedResume[]
+  summary                   Json?
+}
+
+model VerificationLog {
+  id            String    @id @default(cuid())
+  analysisId    String
+  question      String    @db.Text
+  userAnswer    String?   @db.Text
+  verified      Boolean   @default(false)
+  factSummary   String?
+  createdAt     DateTime  @default(now())
+  analysis      Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model ImprovedResume {
+  id                  String    @id @default(cuid())
+  analysisId          String?
+  resumeId            String
+  jobProfileId        String
+  mode                String
+  improvedJson        Json
+  htmlVersion         String    @db.Text
+  transparencyLogJson Json
+  createdAt           DateTime  @default(now())
+  analysis            Analysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  resume              Resume    @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobProfile          JobProfile @relation(fields: [jobProfileId], references: [id], onDelete: Cascade)
+}
+
+model Feedback {
+  id         String   @id @default(cuid())
+  userId     String?
+  analysisId String?
+  rating     String
+  comments   String?  @db.Text
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}

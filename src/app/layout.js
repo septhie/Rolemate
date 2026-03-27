@@ -1,5 +1,6 @@
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: "Rolemate",
@@ -12,6 +13,7 @@ export default function RootLayout({ children }) {
       <body>
         <SiteHeader />
         {children}
+        <Analytics />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, ArrowRight } from "lucide-react";
 import { apiFetch } from "@/lib/api";
@@ -22,7 +23,7 @@ export default function ToolPageClient() {
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [progressIndex, setProgressIndex] = useState(0);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const canSubmit = useMemo(() => {
     const hasResume = Boolean(resumeFile) || manualResumeText.trim().length > 0;
@@ -51,23 +52,25 @@ export default function ToolPageClient() {
       setProgressIndex(step);
     }, 1000);
 
-    startTransition(async () => {
-      try {
-        const result = await apiFetch("/api/reviews", {
-          method: "POST",
-          body: formData
-        });
+    setIsSubmitting(true);
 
-        clearInterval(timer);
-        const nextUrl = result.usage?.showSignupPrompt
-          ? `/app/results/${result.review.id}?signupPrompt=1`
-          : `/app/results/${result.review.id}`;
-        router.push(nextUrl);
-      } catch (requestError) {
-        clearInterval(timer);
-        setError(requestError.message || "Something went wrong while analyzing your resume.");
-      }
-    });
+    try {
+      const result = await apiFetch("/api/reviews", {
+        method: "POST",
+        body: formData,
+        timeoutMs: 60000
+      });
+
+      const nextUrl = result.usage?.showSignupPrompt
+        ? `/app/results/${result.review.id}?signupPrompt=1`
+        : `/app/results/${result.review.id}`;
+      router.push(nextUrl);
+    } catch (requestError) {
+      setError(requestError.message || "Something went wrong while analyzing your resume.");
+    } finally {
+      clearInterval(timer);
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -132,13 +135,26 @@ export default function ToolPageClient() {
             <div>
               <div className="text-sm text-slate">Honest-first analysis only</div>
               <div className="mt-1 text-lg text-ink">Rolemate will never invent skills, jobs, degrees, or certifications.</div>
+              {isSubmitting ? (
+                <div className="mt-3 flex flex-wrap gap-3 text-sm">
+                  <Link href="/" className="text-teal underline-offset-4 hover:underline">
+                    Home
+                  </Link>
+                  <Link href="/dashboard" className="text-teal underline-offset-4 hover:underline">
+                    Dashboard
+                  </Link>
+                  <Link href="/login" className="text-teal underline-offset-4 hover:underline">
+                    Login
+                  </Link>
+                </div>
+              ) : null}
             </div>
             <button
               type="submit"
-              disabled={!canSubmit || isPending || resumeFile?.size > 5 * 1024 * 1024}
+              disabled={!canSubmit || isSubmitting || resumeFile?.size > 5 * 1024 * 1024}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal disabled:cursor-not-allowed disabled:bg-slate"
             >
-              {isPending ? progressSteps[progressIndex] : "Analyze"}
+              {isSubmitting ? progressSteps[progressIndex] : "Analyze"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>

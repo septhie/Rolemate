@@ -1,9 +1,13 @@
 const express = require("express");
+const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 const prisma = require("../utils/prisma");
+const env = require("../utils/env");
 const asyncHandler = require("../utils/asyncHandler");
 const { hashPassword, comparePassword, setAuthCookie, clearAuthCookie } = require("../modules/Auth");
 
 const router = express.Router();
+const googleClient = env.googleClientId ? new OAuth2Client(env.googleClientId) : null;
 
 router.post(
   "/register",
@@ -56,6 +60,54 @@ router.post(
   })
 );
 
+router.post(
+  "/google",
+  asyncHandler(async (req, res) => {
+    if (!googleClient) {
+      const error = new Error("Google sign-in is not configured yet.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const { credential } = req.body;
+    if (!credential) {
+      const error = new Error("Missing Google credential.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: env.googleClientId
+    });
+
+    const payload = ticket.getPayload();
+    const email = payload?.email?.toLowerCase();
+
+    if (!email) {
+      const error = new Error("Google account email was not provided.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash: await hashPassword(crypto.randomUUID())
+        }
+      });
+    }
+
+    setAuthCookie(res, user);
+    res.json({ user: { id: user.id, email: user.email } });
+  })
+);
+
 router.post("/logout", (_req, res) => {
   clearAuthCookie(res);
   res.json({ success: true });
@@ -66,4 +118,3 @@ router.get("/me", (req, res) => {
 });
 
 module.exports = router;
-

@@ -66,6 +66,11 @@ async function persistUploadedPdf(file) {
     return null;
   }
 
+  // Vercel's filesystem is ephemeral, so we skip local file persistence in production.
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") {
+    return null;
+  }
+
   const uploadDir = path.join(process.cwd(), "uploads");
   await fs.mkdir(uploadDir, { recursive: true });
   const fileName = `${Date.now()}-${file.originalname.replace(/\s+/g, "-")}`;
@@ -121,13 +126,15 @@ router.post(
     // enforcing the anonymous free limit so repeat refreshes do not consume extra reviews.
     assertUsageAllowed(req);
 
-    const structuredResume = await parseResume(ingestion.extractedText, runContext);
-    const parsedJobProfile = await analyzeJobDescription({
-      jobDescription: normalizedJobDescription,
-      jobTitle,
-      companyName,
-      runContext
-    });
+    const [structuredResume, parsedJobProfile] = await Promise.all([
+      parseResume(ingestion.extractedText, runContext),
+      analyzeJobDescription({
+        jobDescription: normalizedJobDescription,
+        jobTitle,
+        companyName,
+        runContext
+      })
+    ]);
 
     devLog("jd-parsing-summary", parsedJobProfile);
 
@@ -135,23 +142,24 @@ router.post(
     devLog("mismatch-matrix", mismatchMatrix);
     devLog("fit-score", mismatchMatrix.breakdown);
 
-    const gapAnalysis = await generateGapAnalysis({
-      structuredResume,
-      jobProfile: {
-        ...parsedJobProfile,
-        jobTitle,
-        companyName
-      },
-      mismatchMatrix,
-      runContext
-    });
-
-    const verificationQuestionResult = await generateVerificationQuestions({
-      hardGaps: mismatchMatrix.hardGaps,
-      structuredResume,
-      jobProfile: parsedJobProfile,
-      runContext
-    });
+    const [gapAnalysis, verificationQuestionResult] = await Promise.all([
+      generateGapAnalysis({
+        structuredResume,
+        jobProfile: {
+          ...parsedJobProfile,
+          jobTitle,
+          companyName
+        },
+        mismatchMatrix,
+        runContext
+      }),
+      generateVerificationQuestions({
+        hardGaps: mismatchMatrix.hardGaps,
+        structuredResume,
+        jobProfile: parsedJobProfile,
+        runContext
+      })
+    ]);
 
     devLog("verification-questions", verificationQuestionResult);
 

@@ -1,32 +1,34 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function AuthForm({ mode }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
-    startTransition(async () => {
-      try {
-        await apiFetch(`/api/auth/${mode}`, {
-          method: "POST",
-          body: JSON.stringify({ email, password })
-        });
+    try {
+      await apiFetch(`/api/auth/${mode}`, {
+        method: "POST",
+        body: JSON.stringify({ email, password })
+      });
 
-        router.push("/dashboard");
-      } catch (requestError) {
-        setError(requestError.message || "Authentication failed.");
-      }
-    });
+      router.push("/dashboard");
+    } catch (requestError) {
+      setError(requestError.message || "Authentication failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -35,10 +37,15 @@ export default function AuthForm({ mode }) {
         <div className="text-xs uppercase tracking-[0.18em] text-coral">{mode === "login" ? "Welcome back" : "Free account"}</div>
         <h1 className="mt-2 text-4xl text-ink">{mode === "login" ? "Log in" : "Create your account"}</h1>
         <p className="mt-4 text-sm leading-7 text-slate">
-          Email and password only. No paywall, no ads, no hidden billing.
+          Email/password plus Google sign-in. No paywall, no ads, no hidden billing.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        <div className="mt-8 space-y-4">
+          <GoogleSignInButton onSuccess={() => router.push("/dashboard")} onError={setError} />
+          <div className="text-center text-xs uppercase tracking-[0.18em] text-slate">or use email</div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block text-sm text-slate">
             Email
             <input
@@ -66,14 +73,13 @@ export default function AuthForm({ mode }) {
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isSubmitting}
             className="w-full rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal disabled:bg-slate"
           >
-            {isPending ? "Working..." : mode === "login" ? "Log In" : "Create Account"}
+            {isSubmitting ? "Working..." : mode === "login" ? "Log In" : "Create Account"}
           </button>
         </form>
       </div>
     </div>
   );
 }
-

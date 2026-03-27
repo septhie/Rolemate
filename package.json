@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "google-auth-library": "^9.15.1",
     "html2pdf.js": "^0.10.3",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.511.0",
@@ -41,4 +42,3 @@
     "tailwindcss": "^3.4.17"
   }
 }
-

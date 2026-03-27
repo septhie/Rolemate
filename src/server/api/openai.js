@@ -12,7 +12,7 @@ function getClient() {
   if (!client) {
     client = new OpenAI({
       apiKey: env.openAiApiKey,
-      timeout: 30000
+      timeout: env.nodeEnv === "production" ? 12000 : 30000
     });
   }
 
@@ -38,13 +38,14 @@ function extractJsonPayload(content) {
 
 async function executeWithRetry(task, runContext) {
   let lastError;
+  const maxAttempts = env.nodeEnv === "production" ? 1 : 2;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
       return await task();
     } catch (error) {
       lastError = error;
-      if (attempt === 0) {
+      if (attempt < maxAttempts - 1) {
         runContext.retriesTriggered += 1;
         devLog("api-retry", { message: error.message });
       }

@@ -174,47 +174,49 @@ router.post(
       runContext
     });
 
-    const created = await prisma.$transaction(async (tx) => {
-      const resume = await tx.resume.create({
-        data: {
-          userId: req.user?.id || null,
-          originalPdfPath,
-          extractedText: ingestion.extractedText,
-          structuredJson: structuredResume
-        }
-      });
+    // Neon pooled connections can hang on interactive Prisma transactions in serverless,
+    // so we persist the review with plain sequential writes instead.
+    const resume = await prisma.resume.create({
+      data: {
+        userId: req.user?.id || null,
+        originalPdfPath,
+        extractedText: ingestion.extractedText,
+        structuredJson: structuredResume
+      }
+    });
 
-      const jobProfile = await tx.jobProfile.create({
-        data: {
-          userId: req.user?.id || null,
-          jobTitle: jobTitle || null,
-          companyName: companyName || null,
-          jobDescription: normalizedJobDescription,
-          parsedJson: parsedJobProfile
-        }
-      });
+    const jobProfile = await prisma.jobProfile.create({
+      data: {
+        userId: req.user?.id || null,
+        jobTitle: jobTitle || null,
+        companyName: companyName || null,
+        jobDescription: normalizedJobDescription,
+        parsedJson: parsedJobProfile
+      }
+    });
 
-      const analysis = await tx.analysis.create({
-        data: {
-          resumeId: resume.id,
-          jobProfileId: jobProfile.id,
-          fitScore: mismatchMatrix.fitScore,
-          mismatchMatrixJson: mismatchMatrix,
-          strengthsJson: gapAnalysis.strengths,
-          weaknessesJson: gapAnalysis.missing,
-          missingKeywordsJson: mismatchMatrix.hardGaps.map((item) => item.value),
-          redFlagsJson: {
-            resumeWarnings: ingestion.warnings,
-            parsedResumeFlags: structuredResume.flags,
-            scannedLikely: ingestion.scannedLikely,
-            honestAssessment: gapAnalysis.honestAssessment
-          },
-          cacheKey,
-          summary: runSummary
-        }
-      });
+    const analysis = await prisma.analysis.create({
+      data: {
+        resumeId: resume.id,
+        jobProfileId: jobProfile.id,
+        fitScore: mismatchMatrix.fitScore,
+        mismatchMatrixJson: mismatchMatrix,
+        strengthsJson: gapAnalysis.strengths,
+        weaknessesJson: gapAnalysis.missing,
+        missingKeywordsJson: mismatchMatrix.hardGaps.map((item) => item.value),
+        redFlagsJson: {
+          resumeWarnings: ingestion.warnings,
+          parsedResumeFlags: structuredResume.flags,
+          scannedLikely: ingestion.scannedLikely,
+          honestAssessment: gapAnalysis.honestAssessment
+        },
+        cacheKey,
+        summary: runSummary
+      }
+    });
 
-      await tx.verificationLog.createMany({
+    if ((verificationQuestionResult.questions || []).length) {
+      await prisma.verificationLog.createMany({
         data: (verificationQuestionResult.questions || []).map((item) => ({
           analysisId: analysis.id,
           question: item.question,
@@ -223,12 +225,10 @@ router.post(
           factSummary: item.gap
         }))
       });
-
-      return analysis.id;
-    });
+    }
 
     const review = await prisma.analysis.findUnique({
-      where: { id: created },
+      where: { id: analysis.id },
       include: {
         resume: true,
         jobProfile: true,
@@ -239,7 +239,7 @@ router.post(
       }
     });
 
-    const usage = recordCompletedReview(req, res, created);
+    const usage = recordCompletedReview(req, res, analysis.id);
     devLog("run-summary", review.summary);
 
     res.status(201).json({

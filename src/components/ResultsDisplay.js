@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, CircleAlert, CircleDashed, MessageSquareQuote } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getScoreTheme, truncate } from "@/lib/utils";
+import { loadTransientReview, saveTransientReview } from "@/lib/transientReview";
 
 function MatrixColumn({ title, items, accent }) {
   const accentMap = {
@@ -45,6 +46,15 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
     let active = true;
 
     async function loadReview() {
+      const transientReview = loadTransientReview(reviewId);
+      if (transientReview) {
+        if (active) {
+          setReview(transientReview);
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         const result = await apiFetch(`/api/reviews/${reviewId}`);
         if (active) {
@@ -70,18 +80,34 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
   function handleAnswerSubmit(log) {
     startTransition(async () => {
       try {
-        const result = await apiFetch(`/api/reviews/${reviewId}/verification`, {
-          method: "POST",
-          body: JSON.stringify({
-            verificationLogId: log.id,
-            answer: answers[log.id] ?? log.userAnswer ?? ""
-          })
-        });
+        const answer = answers[log.id] ?? log.userAnswer ?? "";
+        const result = review.transient
+          ? await apiFetch("/api/reviews/verify-transient", {
+              method: "POST",
+              body: JSON.stringify({
+                question: log.question,
+                answer,
+                verificationLogId: log.id
+              })
+            })
+          : await apiFetch(`/api/reviews/${reviewId}/verification`, {
+              method: "POST",
+              body: JSON.stringify({
+                verificationLogId: log.id,
+                answer
+              })
+            });
 
-        setReview((current) => ({
-          ...current,
-          verificationLogs: current.verificationLogs.map((item) => (item.id === log.id ? result.verificationLog : item))
-        }));
+        setReview((current) => {
+          const nextReview = {
+            ...current,
+            verificationLogs: current.verificationLogs.map((item) => (item.id === log.id ? result.verificationLog : item))
+          };
+          if (nextReview.transient) {
+            saveTransientReview(nextReview);
+          }
+          return nextReview;
+        });
       } catch (requestError) {
         setError(requestError.message || "Could not save your answer.");
       }

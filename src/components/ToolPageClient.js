@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, ArrowRight } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { saveTransientReview } from "@/lib/transientReview";
 import JobDescriptionInput from "@/components/JobDescriptionInput";
 
 const progressSteps = [
@@ -60,6 +61,10 @@ export default function ToolPageClient() {
         body: formData,
         timeoutMs: 60000
       });
+
+      if (result.review?.transient) {
+        saveTransientReview(result.review);
+      }
 
       const nextUrl = result.usage?.showSignupPrompt
         ? `/app/results/${result.review.id}?signupPrompt=1`

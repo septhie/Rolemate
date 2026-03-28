@@ -1,4 +1,5 @@
 const express = require("express");
+const crypto = require("crypto");
 const fs = require("fs/promises");
 const path = require("path");
 const multer = require("multer");
@@ -61,6 +62,59 @@ function serializeAnalysis(record) {
   };
 }
 
+function buildTransientReview({
+  ingestion,
+  structuredResume,
+  parsedJobProfile,
+  mismatchMatrix,
+  gapAnalysis,
+  verificationQuestionResult,
+  jobTitle,
+  companyName,
+  normalizedJobDescription,
+  runSummary
+}) {
+  const reviewId = crypto.randomUUID();
+
+  return {
+    id: reviewId,
+    createdAt: new Date().toISOString(),
+    fitScore: mismatchMatrix.fitScore,
+    mismatchMatrix,
+    strengths: gapAnalysis.strengths,
+    weaknesses: gapAnalysis.missing,
+    missingKeywords: mismatchMatrix.hardGaps.map((item) => item.value),
+    redFlags: {
+      resumeWarnings: ingestion.warnings,
+      parsedResumeFlags: structuredResume.flags,
+      scannedLikely: ingestion.scannedLikely,
+      honestAssessment: gapAnalysis.honestAssessment
+    },
+    summary: runSummary,
+    transient: true,
+    resume: {
+      id: `resume-${reviewId}`,
+      extractedText: ingestion.extractedText,
+      structuredJson: structuredResume
+    },
+    jobProfile: {
+      id: `job-${reviewId}`,
+      jobTitle: jobTitle || null,
+      companyName: companyName || null,
+      jobDescription: normalizedJobDescription,
+      parsedJson: parsedJobProfile
+    },
+    verificationLogs: (verificationQuestionResult.questions || []).map((item, index) => ({
+      id: `verify-${reviewId}-${index}`,
+      question: item.question,
+      userAnswer: null,
+      verified: false,
+      factSummary: item.gap
+    })),
+    improvedResumes: []
+  };
+}
+
 async function persistUploadedPdf(file) {
   if (!file) {
     return null;
@@ -102,24 +156,26 @@ router.post(
       })
     );
 
-    const cached = await prisma.analysis.findUnique({
-      where: { cacheKey },
-      include: {
-        resume: true,
-        jobProfile: true,
-        verificationLogs: true,
-        improvedResumes: {
-          orderBy: { createdAt: "desc" }
+    if (req.user) {
+      const cached = await prisma.analysis.findUnique({
+        where: { cacheKey },
+        include: {
+          resume: true,
+          jobProfile: true,
+          verificationLogs: true,
+          improvedResumes: {
+            orderBy: { createdAt: "desc" }
+          }
         }
-      }
-    });
-
-    if (cached) {
-      return res.json({
-        review: serializeAnalysis(cached),
-        cached: true,
-        usage: req.user ? null : null
       });
+
+      if (cached) {
+        return res.json({
+          review: serializeAnalysis(cached),
+          cached: true,
+          usage: null
+        });
+      }
     }
 
     // We allow exact duplicate submissions to short-circuit to the cached result before
@@ -173,6 +229,28 @@ router.post(
       rewriteGenerated: false,
       runContext
     });
+
+    if (!req.user) {
+      const review = buildTransientReview({
+        ingestion,
+        structuredResume,
+        parsedJobProfile,
+        mismatchMatrix,
+        gapAnalysis,
+        verificationQuestionResult,
+        jobTitle,
+        companyName,
+        normalizedJobDescription,
+        runSummary
+      });
+
+      const usage = recordCompletedReview(req, res, review.id);
+      return res.status(201).json({
+        review,
+        cached: false,
+        usage
+      });
+    }
 
     // Neon pooled connections can hang on interactive Prisma transactions in serverless,
     // so we persist the review with plain sequential writes instead.
@@ -246,6 +324,80 @@ router.post(
       review: serializeAnalysis(review),
       cached: false,
       usage
+    });
+  })
+);
+
+router.post(
+  "/verify-transient",
+  asyncHandler(async (req, res) => {
+    const { verificationLogId, question, answer } = req.body;
+    if (!question || !answer?.trim()) {
+      const error = new Error("Question and answer are required.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const runContext = createRunContext();
+    const verificationResult = await verifyInterviewAnswer({
+      question,
+      answer,
+      runContext
+    });
+
+    res.json({
+      verificationLog: {
+        id: verificationLogId || crypto.randomUUID(),
+        question,
+        userAnswer: answer,
+        verified: Boolean(verificationResult.verified),
+        factSummary: verificationResult.factSummary || ""
+      },
+      result: verificationResult
+    });
+  })
+);
+
+router.post(
+  "/rewrite-transient",
+  asyncHandler(async (req, res) => {
+    const { mode, review } = req.body;
+    const allowedModes = ["Strict", "Suggestion", "Translation"];
+    if (!allowedModes.includes(mode)) {
+      const error = new Error("Unsupported rewrite mode.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!review?.resume?.structuredJson || !review?.jobProfile?.parsedJson || !review?.mismatchMatrix) {
+      const error = new Error("Review payload is incomplete.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const runContext = createRunContext();
+    const rewrite = await generateResumeRewrite({
+      mode,
+      structuredResume: review.resume.structuredJson,
+      jobProfile: {
+        ...review.jobProfile.parsedJson,
+        jobTitle: review.jobProfile.jobTitle,
+        companyName: review.jobProfile.companyName
+      },
+      mismatchMatrix: review.mismatchMatrix,
+      verificationLogs: review.verificationLogs || [],
+      runContext
+    });
+
+    res.status(201).json({
+      improvedResume: {
+        id: `transient-${review.id}-${mode.toLowerCase()}`,
+        mode,
+        improvedJson: rewrite.improvedJson,
+        transparencyLogJson: rewrite.transparencyLog,
+        htmlVersion: rewrite.htmlVersion,
+        selfCheck: rewrite.selfCheck
+      }
     });
   })
 );

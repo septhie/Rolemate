@@ -5,6 +5,12 @@ import Link from "next/link";
 import { Download, Copy, ThumbsUp, ThumbsDown, Sparkles } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import ResumeRenderer from "@/components/ResumeRenderer";
+import {
+  loadTransientReview,
+  loadTransientRewrite,
+  saveTransientReview,
+  saveTransientRewrite
+} from "@/lib/transientReview";
 
 const modes = ["Strict", "Suggestion", "Translation"];
 
@@ -48,6 +54,19 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
     let active = true;
 
     async function loadReview() {
+      const transientReview = loadTransientReview(reviewId);
+      if (transientReview) {
+        if (!active) {
+          return;
+        }
+
+        setReview(transientReview);
+        const existingTransientRewrite = loadTransientRewrite(reviewId, initialMode) || transientReview.improvedResumes?.find((item) => item.mode === initialMode) || null;
+        setImprovedResume(existingTransientRewrite);
+        setLoading(false);
+        return;
+      }
+
       try {
         const result = await apiFetch(`/api/reviews/${reviewId}`);
         if (!active) {
@@ -79,7 +98,7 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
       return;
     }
 
-    const existing = (review.improvedResumes || []).find((item) => item.mode === mode);
+    const existing = loadTransientRewrite(reviewId, mode) || (review.improvedResumes || []).find((item) => item.mode === mode);
     if (existing) {
       setImprovedResume(existing);
       return;
@@ -87,16 +106,33 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
 
     startTransition(async () => {
       try {
-        const result = await apiFetch(`/api/reviews/${reviewId}/rewrite`, {
-          method: "POST",
-          body: JSON.stringify({ mode })
-        });
+        const result = review.transient
+          ? await apiFetch("/api/reviews/rewrite-transient", {
+              method: "POST",
+              body: JSON.stringify({ mode, review })
+            })
+          : await apiFetch(`/api/reviews/${reviewId}/rewrite`, {
+              method: "POST",
+              body: JSON.stringify({ mode })
+            });
 
         setImprovedResume(result.improvedResume);
-        setReview((current) => ({
-          ...current,
-          improvedResumes: [result.improvedResume, ...(current.improvedResumes || [])]
-        }));
+        if (review.transient) {
+          saveTransientRewrite(reviewId, mode, result.improvedResume);
+          setReview((current) => {
+            const nextReview = {
+              ...current,
+              improvedResumes: [result.improvedResume, ...(current.improvedResumes || []).filter((item) => item.mode !== result.improvedResume.mode)]
+            };
+            saveTransientReview(nextReview);
+            return nextReview;
+          });
+        } else {
+          setReview((current) => ({
+            ...current,
+            improvedResumes: [result.improvedResume, ...(current.improvedResumes || [])]
+          }));
+        }
       } catch (requestError) {
         setError(requestError.message || "Could not generate the rewrite.");
       }
@@ -110,6 +146,47 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
 
   async function handleSuggestionDecision(suggestionId, decision) {
     try {
+      if (review.transient) {
+        const nextImprovedResume = {
+          ...improvedResume,
+          improvedJson: {
+            ...improvedResume.improvedJson,
+            suggestedBullets: (improvedResume.improvedJson?.suggestedBullets || []).map((item) =>
+              item.id === suggestionId ? { ...item, status: decision } : item
+            ),
+            sections: (improvedResume.improvedJson?.sections || []).map((section) => {
+              if (decision !== "accepted" || section.id !== "experience" || !section.items?.length) {
+                return section;
+              }
+
+              const acceptedSuggestion = (improvedResume.improvedJson?.suggestedBullets || []).find((item) => item.id === suggestionId);
+              if (!acceptedSuggestion) {
+                return section;
+              }
+
+              return {
+                ...section,
+                items: section.items.map((entry, index) =>
+                  index === 0
+                    ? {
+                        ...entry,
+                        bullets: [...(entry.bullets || []), { text: acceptedSuggestion.text, suggested: true }]
+                      }
+                    : entry
+                )
+              };
+            }),
+            transparencyLog: (improvedResume.improvedJson?.transparencyLog || []).map((item) =>
+              item.id === suggestionId ? { ...item, status: decision } : item
+            )
+          }
+        };
+
+        setImprovedResume(nextImprovedResume);
+        saveTransientRewrite(reviewId, mode, nextImprovedResume);
+        return;
+      }
+
       const result = await apiFetch(`/api/reviews/improved/${improvedResume.id}/decision`, {
         method: "POST",
         body: JSON.stringify({ suggestionId, decision })

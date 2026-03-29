@@ -31,48 +31,61 @@ export default function SiteHeader() {
   }, []);
 
   return (
-    <aside className="fixed left-5 top-5 z-30 flex h-[calc(100vh-40px)] w-[60px] flex-col items-center justify-between rounded-[30px] border border-white/8 bg-[#0d1117]/76 py-5 backdrop-blur-2xl">
-      <div className="flex flex-col items-center gap-6">
-        <RolemateLogo size={38} withWordmark={false} />
-        <nav className="flex flex-col items-center gap-3">
-          {links.map((link) => {
-            const Icon = link.icon;
-            const active = pathname === link.href;
+    <>
+      <aside className="fixed inset-y-0 left-0 z-40 flex w-20 flex-col items-center justify-between border-r border-white/10 bg-black/30 py-[3vh] backdrop-blur-3xl">
+        <div className="flex flex-col items-center gap-[3.4vh]">
+          <RolemateLogo size={42} withWordmark={false} />
+          <nav className="flex flex-col items-center gap-[1.6vh]">
+            {links.map((link) => {
+              const Icon = link.icon;
+              const active = pathname === link.href;
 
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-label={link.label}
-                className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-2xl border transition",
-                  active
-                    ? "border-[#d4a85c]/30 bg-[#d4a85c]/16 text-[#efcf94]"
-                    : "border-transparent bg-transparent text-white/48 hover:border-white/8 hover:bg-white/[0.04] hover:text-white"
-                )}
-              >
-                <Icon className="h-4 w-4" />
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-label={link.label}
+                  className={cn(
+                    "flex h-11 w-11 items-center justify-center rounded-[1.1rem] border border-transparent transition",
+                    active
+                      ? "bg-[#ffb800]/14 text-[#ffcf57] shadow-[0_0_24px_rgba(255,184,0,0.16)]"
+                      : "text-white/48 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-      <div className="flex flex-col items-center gap-3">
-        <div className="text-[9px] uppercase tracking-[0.3em] text-white/30 [writing-mode:vertical-rl]">
-          {unlocked ? "Guest unlocked" : "3 free"}
+        <div className="flex flex-col items-center gap-[1.6vh]">
+          <div className="text-[0.62rem] uppercase tracking-[0.32em] text-white/32 [writing-mode:vertical-rl]">
+            {unlocked ? "Unlocked" : "3-Free"}
+          </div>
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2].map((index) => (
+              <span
+                key={index}
+                className={`block h-[4.3vh] min-h-[20px] w-[0.45rem] rounded-full ${
+                  unlocked || index < remaining ? "bg-[#ffb800] shadow-[0_0_18px_rgba(255,184,0,0.32)]" : "bg-white/12"
+                }`}
+              />
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-1.5">
-          {[0, 1, 2].map((index) => (
-            <span
-              key={index}
-              className={`block h-6 w-2 rounded-full ${
-                unlocked || index < remaining ? "bg-[#d4a85c] shadow-[0_0_18px_rgba(212,168,92,0.45)]" : "bg-white/12"
-              }`}
-            />
-          ))}
+      </aside>
+
+      <div className="fixed bottom-0 left-20 right-0 z-40 flex h-[5.5vh] min-h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-[3vw] text-[0.68rem] uppercase tracking-[0.24em] text-white/42 backdrop-blur-3xl">
+        <div className="flex items-center gap-[1.2vw]">
+          <span className="h-2 w-2 rounded-full bg-[#ffb800] shadow-[0_0_16px_rgba(255,184,0,0.35)]" />
+          <span>Student-to-student honest analysis</span>
+        </div>
+        <div className="flex items-center gap-[1vw]">
+          <span>{unlocked ? "Member unlocked" : `${remaining} free credits left`}</span>
+          <span className="hidden sm:inline">Resume truth engine online</span>
         </div>
       </div>
-    </aside>
+    </>
   );
 }

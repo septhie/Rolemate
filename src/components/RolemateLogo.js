@@ -40,8 +40,8 @@ export default function RolemateLogo({ size = 44, withWordmark = true, className
 
       {withWordmark ? (
         <div>
-          <div className="font-semibold tracking-[-0.03em] text-ink">Rolemate</div>
-          <div className="text-xs text-slate">Your honest career mate</div>
+          <div className="font-display text-xl tracking-[-0.05em] text-[#f5f5f5]">Rolemate</div>
+          <div className="analysis-text text-[0.66rem] uppercase tracking-[0.2em] text-white/40">Your honest career mate</div>
         </div>
       ) : null}
     </div>

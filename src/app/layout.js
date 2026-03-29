@@ -1,10 +1,10 @@
 import "./globals.css";
-import { Inter, Playfair_Display } from "next/font/google";
+import { JetBrains_Mono, Playfair_Display } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
 
-const inter = Inter({
+const mono = JetBrains_Mono({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-mono"
 });
 
 const playfair = Playfair_Display({
@@ -20,12 +20,13 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans`}>
-        <div className="app-shell">
-          <div className="pointer-events-none fixed inset-5 z-20 rounded-[28px] border-2 border-[#d4a85c]/20 shadow-[0_0_40px_rgba(212,168,92,0.12)]" />
-          <div className="fine-grid" />
+      <body className={`${mono.variable} ${playfair.variable} font-mono`}>
+        <div className="app-shell min-h-screen w-full">
+          <div className="noise-overlay" />
+          <div className="orb orb-left" />
+          <div className="orb orb-right" />
           <SiteHeader />
-          <div className="min-h-screen pl-[92px]">{children}</div>
+          {children}
         </div>
       </body>
     </html>

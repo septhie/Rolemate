@@ -1,5 +1,12 @@
 import "./globals.css";
+import { Inter } from "next/font/google";
+import FreeCreditsBar from "@/components/FreeCreditsBar";
 import SiteHeader from "@/components/SiteHeader";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter"
+});
 
 export const metadata = {
   title: "Rolemate",
@@ -9,11 +16,14 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        <SiteHeader />
-        {children}
+      <body className={`${inter.variable} font-sans`}>
+        <div className="app-shell">
+          <div className="fine-grid" />
+          <FreeCreditsBar />
+          <SiteHeader />
+          {children}
+        </div>
       </body>
     </html>
   );
 }
-

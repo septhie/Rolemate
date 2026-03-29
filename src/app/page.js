@@ -1,82 +1,126 @@
+"use client";
+
 import Link from "next/link";
+import { ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 
 const steps = [
   {
+    kicker: "01",
     title: "Upload Resume",
-    text: "Send a PDF resume or paste the text if extraction struggles."
+    text: "PDF first, manual text fallback when extraction is weak."
   },
   {
+    kicker: "02",
     title: "Analyze Match",
-    text: "See direct matches, soft gaps, hard gaps, and a transparent fit score."
+    text: "Rolemate scores the fit, names the gaps, and shows the evidence."
   },
   {
+    kicker: "03",
     title: "Get Honest Rewrite",
-    text: "Rolemate rewrites only from what is real and verified."
+    text: "Only what is real, verified, and fair to claim gets into the draft."
   }
 ];
 
+const reveal = {
+  hidden: { opacity: 0, y: 26 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.65,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.1
+    }
+  }
+};
+
 export default function LandingPage() {
   return (
-    <main className="overflow-hidden">
-      <section className="bg-hero-mesh">
-        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:py-28">
-          <div className="max-w-2xl">
-            <div className="inline-flex rounded-full border border-coral/20 bg-white/70 px-4 py-2 text-sm text-coral">
-              Honest Friend Rule built in
-            </div>
-            <h1 className="mt-6 text-5xl leading-tight text-ink sm:text-6xl">
-              Your honest career mate
-            </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate">
-              Upload your resume. Paste the job description. Get real feedback - no fluff, no made-up
-              skills.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/app"
-                className="rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white transition hover:bg-teal"
-              >
-                Check My Resume - It&apos;s Free
-              </Link>
-              <div className="text-sm text-slate">3 free reviews - No credit card - No BS</div>
-            </div>
-          </div>
+    <main className="page-grid overflow-hidden">
+      <section className="mx-auto grid min-h-[calc(100vh-120px)] max-w-7xl items-center gap-16 px-4 py-14 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+        <motion.div variants={reveal} initial="hidden" animate="show" className="max-w-2xl">
+          <motion.div
+            variants={reveal}
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-white/64"
+          >
+            <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" />
+            Honest Friend Rule built in
+          </motion.div>
+          <motion.h1
+            variants={reveal}
+            className="mt-6 max-w-xl text-6xl font-bold tracking-[-0.07em] text-white sm:text-7xl"
+          >
+            Your honest career mate.
+          </motion.h1>
+          <motion.p variants={reveal} className="mt-6 max-w-xl text-lg leading-9 text-white/62">
+            Upload your resume. Paste the job description. Get real feedback with zero invented skills, zero fake confidence, and a sharper case for what you actually bring.
+          </motion.p>
+          <motion.div variants={reveal} className="mt-10 flex flex-wrap items-center gap-4">
+            <Link
+              href="/app"
+              className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.02]"
+            >
+              Check My Resume
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <div className="text-sm text-white/48">3 free reviews. No credit card. No BS.</div>
+          </motion.div>
+        </motion.div>
 
-          <div className="glass-card rounded-[2rem] p-6 sm:p-8">
-            <div className="rounded-[1.5rem] bg-ink p-6 text-white">
-              <div className="text-sm uppercase tracking-[0.2em] text-sand">Honest Assessment</div>
-              <p className="mt-4 text-lg leading-8 text-white/90">
-                Your background shows strong customer-facing experience, but this data analyst role asks
-                for SQL and dashboard work you have not shown yet. That&apos;s a real gap. Let&apos;s pull out any
-                spreadsheet, reporting, or class project work that is actually yours.
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+          className="liquid-panel relative overflow-hidden rounded-[2rem] p-6 sm:p-8"
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(134,239,172,0.1),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(129,140,248,0.18),transparent_42%)]" />
+          <div className="relative">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/8 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-emerald-300">
+              <Sparkles className="h-3.5 w-3.5" />
+              Live honesty layer
+            </div>
+            <div className="mt-6 rounded-[1.8rem] border border-white/8 bg-[#071018]/90 p-6 shadow-[0_0_60px_rgba(34,197,94,0.08)]">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-white/38">Harsh Truth</div>
+              <p className="mt-5 text-[1.06rem] leading-9 text-white/88">
+                Your customer-facing background is real value. But this data analyst role expects SQL, dashboards, and analysis work you have not shown yet. That gap is real. Let&apos;s find spreadsheet, reporting, or coursework evidence that actually belongs to you.
               </p>
             </div>
-            <div className="mt-6 grid gap-4">
-              <div className="rounded-3xl border border-black/5 bg-white p-4">
-                <div className="text-xs uppercase tracking-[0.16em] text-teal">What&apos;s Working</div>
-                <div className="mt-3 text-sm text-slate">Customer communication, fast-paced operations, cash handling</div>
+
+            <div className="mt-5 grid gap-4">
+              <div className="liquid-subtle rounded-[1.5rem] p-5">
+                <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300">Pros</div>
+                <div className="mt-3 text-sm leading-7 text-white/72">
+                  Customer communication, high-volume operations, reliability under pressure.
+                </div>
               </div>
-              <div className="rounded-3xl border border-black/5 bg-white p-4">
-                <div className="text-xs uppercase tracking-[0.16em] text-coral">Verification Agent</div>
-                <div className="mt-3 text-sm text-slate">
-                  "Did you ever use Excel or Google Sheets to track inventory, sales, or team performance?"
+              <div className="liquid-subtle rounded-[1.5rem] p-5">
+                <div className="text-[11px] uppercase tracking-[0.24em] text-violet-300">Verification Prompt</div>
+                <div className="mt-3 text-sm leading-7 text-white/72">
+                  Did you ever use Excel or Google Sheets to track inventory, sales, scheduling, or team performance?
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid-stagger grid gap-6 md:grid-cols-3">
-          {steps.map((step, index) => (
-            <div key={step.title} className="glass-card rounded-[2rem] p-6">
-              <div className="text-sm uppercase tracking-[0.2em] text-coral">Step {index + 1}</div>
-              <h2 className="mt-3 text-3xl text-ink">{step.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-slate">{step.text}</p>
-            </div>
+      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <motion.div
+          variants={reveal}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.25 }}
+          className="grid gap-4 md:grid-cols-3"
+        >
+          {steps.map((step) => (
+            <motion.div key={step.title} variants={reveal} className="liquid-panel rounded-[1.75rem] p-6">
+              <div className="text-[11px] uppercase tracking-[0.28em] text-white/34">{step.kicker}</div>
+              <h2 className="mt-5 text-3xl font-bold tracking-[-0.05em] text-white">{step.title}</h2>
+              <p className="mt-3 max-w-sm text-sm leading-7 text-white/58">{step.text}</p>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
     </main>
   );

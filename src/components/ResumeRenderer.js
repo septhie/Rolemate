@@ -68,10 +68,10 @@ export default function ResumeRenderer({ resumeData, accent = "teal", title = "R
   const normalized = normalizeResume(resumeData);
 
   return (
-    <div className="rounded-[2rem] border border-black/10 bg-white p-6">
-      <div className="border-b border-black/10 pb-4">
+    <div className="liquid-panel rounded-[2rem] p-6">
+      <div className="border-b border-white/8 pb-4">
         <div className="text-xs uppercase tracking-[0.18em] text-slate">{title}</div>
-        <h3 className="mt-2 text-3xl text-ink">{normalized.contactName}</h3>
+        <h3 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-ink">{normalized.contactName}</h3>
         {normalized.contactLine ? <p className="mt-2 text-sm text-slate">{normalized.contactLine}</p> : null}
         {normalized.summary ? <p className="mt-4 text-sm leading-7 text-slate">{normalized.summary}</p> : null}
       </div>
@@ -88,7 +88,7 @@ export default function ResumeRenderer({ resumeData, accent = "teal", title = "R
             ) : (
               <div className="mt-4 space-y-4">
                 {section.items.map((item, index) => (
-                  <div key={`${section.id}-${index}`} className="rounded-3xl bg-paper/50 p-4">
+                  <div key={`${section.id}-${index}`} className="rounded-3xl border border-white/8 bg-white/[0.03] p-4">
                     <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
                       <div>
                         <div className="font-medium text-ink">{item.title}</div>
@@ -101,7 +101,7 @@ export default function ResumeRenderer({ resumeData, accent = "teal", title = "R
                         {item.bullets.map((bullet, bulletIndex) => (
                           <li
                             key={`${section.id}-${index}-${bulletIndex}`}
-                            className={bullet.suggested ? "rounded-2xl bg-amber-50 px-3 py-2 text-amber-900" : ""}
+                            className={bullet.suggested ? "rounded-2xl bg-amber-400/12 px-3 py-2 text-amber-100" : ""}
                           >
                             {bullet.text || bullet}
                           </li>

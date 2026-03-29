@@ -256,8 +256,8 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="text-xs uppercase tracking-[0.18em] text-coral">Preview Workspace</div>
-          <h1 className="mt-2 text-4xl text-ink">Compare the original against the Rolemate draft</h1>
+          <div className="text-xs uppercase tracking-[0.18em] text-violet-200">Preview Workspace</div>
+          <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-ink">Compare the original against the Rolemate draft</h1>
         </div>
         <div className="flex flex-wrap gap-3">
           {modes.map((candidateMode) => (
@@ -265,7 +265,7 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
               key={candidateMode}
               type="button"
               onClick={() => setMode(candidateMode)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${mode === candidateMode ? "bg-navy text-white" : "bg-white text-ink"}`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition ${mode === candidateMode ? "bg-white text-black" : "bg-white/[0.05] text-white"}`}
             >
               {candidateMode}
             </button>
@@ -277,7 +277,7 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
         <button
           type="button"
           onClick={handleDownload}
-          className="inline-flex items-center gap-2 rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white"
+          className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white px-5 py-3 text-sm font-semibold text-black"
         >
           <Download className="h-4 w-4" />
           Download PDF
@@ -285,18 +285,18 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
         <button
           type="button"
           onClick={handleCopy}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-ink"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-white"
         >
           <Copy className="h-4 w-4" />
           Copy to Clipboard
         </button>
-        <Link href="/app" className="inline-flex items-center gap-2 rounded-full bg-coral px-5 py-3 text-sm font-semibold text-white">
+        <Link href="/app" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-white">
           Start a New Review
         </Link>
       </div>
 
       {isPending ? (
-        <div className="mt-4 rounded-3xl bg-white px-4 py-3 text-sm text-slate">Generating your {mode} draft...</div>
+        <div className="mt-4 rounded-3xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-slate">Generating your {mode} draft...</div>
       ) : null}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr_0.72fr]">
@@ -308,19 +308,19 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
           {improvedResume ? (
             <ResumeRenderer resumeData={improvedResume.improvedJson} title={`Rolemate Draft - ${mode}`} accent="teal" />
           ) : (
-            <div className="rounded-[2rem] border border-black/10 bg-white p-6 text-sm text-slate">Generating draft...</div>
+            <div className="rounded-[2rem] border border-white/8 bg-white/[0.03] p-6 text-sm text-slate">Generating draft...</div>
           )}
         </div>
 
         <div className="space-y-6">
-          <div className="glass-card rounded-[2rem] p-6">
+          <div className="liquid-panel rounded-[2rem] p-6">
             <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-teal">
               <Sparkles className="h-4 w-4" />
               Transparency Log
             </div>
             <div className="mt-4 space-y-3">
               {(improvedResume?.transparencyLogJson || improvedResume?.improvedJson?.transparencyLog || []).map((item) => (
-                <details key={item.id} className="rounded-3xl bg-white p-4">
+                <details key={item.id} className="rounded-3xl border border-white/8 bg-white/[0.03] p-4">
                   <summary className="cursor-pointer text-sm font-medium text-ink">{item.change}</summary>
                   <div className="mt-3 text-xs leading-6 text-slate">
                     <div>Why: {item.reason}</div>
@@ -334,12 +334,12 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
           </div>
 
           {mode === "Suggestion" ? (
-            <div className="glass-card rounded-[2rem] p-6">
+            <div className="liquid-panel rounded-[2rem] p-6">
               <div className="text-xs uppercase tracking-[0.18em] text-coral">Suggested Bullets</div>
               <div className="mt-4 space-y-3">
                 {pendingSuggestions.length ? (
                   pendingSuggestions.map((item) => (
-                    <div key={item.id} className="rounded-3xl bg-white p-4">
+                    <div key={item.id} className="rounded-3xl border border-white/8 bg-white/[0.03] p-4">
                       <div className="text-sm leading-7 text-ink">{item.text}</div>
                       <div className="mt-2 text-xs text-slate">{item.reason}</div>
                       <div className="mt-4 flex gap-2">
@@ -361,14 +361,14 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-3xl bg-white p-4 text-sm text-slate">No pending suggestions right now.</div>
+                  <div className="rounded-3xl border border-white/8 bg-white/[0.03] p-4 text-sm text-slate">No pending suggestions right now.</div>
                 )}
               </div>
             </div>
           ) : null}
 
           {showFeedback ? (
-            <div className="glass-card rounded-[2rem] p-6">
+            <div className="liquid-panel rounded-[2rem] p-6">
               <div className="text-xs uppercase tracking-[0.18em] text-teal">Was this helpful?</div>
               <div className="mt-4 flex gap-3">
                 <button
@@ -391,7 +391,7 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
               <textarea
                 value={feedbackText}
                 onChange={(event) => setFeedbackText(event.target.value)}
-                className="mt-4 min-h-[120px] w-full rounded-2xl border border-black/10 bg-white px-4 py-4 text-sm leading-7 text-ink outline-none transition focus:border-teal"
+                className="field-shell mt-4 min-h-[120px] w-full px-4 py-4 text-sm leading-7 outline-none transition"
                 placeholder="Optional feedback"
               />
             </div>

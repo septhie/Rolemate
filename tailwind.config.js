@@ -8,26 +8,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#10212A",
-        paper: "#F6F1E8",
-        coral: "#EE6C4D",
-        teal: "#1B7F8B",
-        moss: "#5F7A61",
-        sand: "#E7D8BF",
-        slate: "#5A6473",
-        navy: "#17324A"
+        ink: "#F8FAFC",
+        paper: "#050505",
+        coral: "#F97316",
+        teal: "#22D3EE",
+        moss: "#4ADE80",
+        sand: "#A5B4FC",
+        slate: "#94A3B8",
+        navy: "#020617"
       },
       boxShadow: {
-        soft: "0 24px 80px rgba(16, 33, 42, 0.12)"
+        soft: "0 24px 80px rgba(0, 0, 0, 0.35)"
       },
       borderRadius: {
         "4xl": "2rem"
       },
       backgroundImage: {
-        "hero-mesh": "radial-gradient(circle at top left, rgba(238,108,77,0.18), transparent 36%), radial-gradient(circle at top right, rgba(27,127,139,0.14), transparent 34%), linear-gradient(135deg, #F6F1E8 0%, #FFFDF8 48%, #F5E7D1 100%)"
+        "hero-mesh": "radial-gradient(circle at top left, rgba(79,70,229,0.18), transparent 36%), radial-gradient(circle at top right, rgba(109,40,217,0.16), transparent 34%), linear-gradient(180deg, #050505 0%, #000000 100%)"
       }
     }
   },
   plugins: []
 };
-

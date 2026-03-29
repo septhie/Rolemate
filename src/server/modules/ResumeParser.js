@@ -1,5 +1,6 @@
 const { callOpenAIJson } = require("../api/openai");
 const { buildResumeParserPrompt } = require("../prompts/resumeParserPrompt");
+const { condenseText } = require("../utils/promptCompression");
 
 function splitByHeadings(text) {
   const headingMap = {
@@ -135,11 +136,13 @@ function splitByHeadings(text) {
 }
 
 async function parseResume(resumeText, runContext) {
+  const condensedResumeText = condenseText(resumeText, 4200);
+
   return callOpenAIJson({
     taskName: "resume-parser",
     runContext,
     systemPrompt: buildResumeParserPrompt(),
-    userPrompt: `Resume text:\n${resumeText}`,
+    userPrompt: `Resume text:\n${condensedResumeText}`,
     fallback: () => splitByHeadings(resumeText)
   });
 }
@@ -147,4 +150,3 @@ async function parseResume(resumeText, runContext) {
 module.exports = {
   parseResume
 };
-

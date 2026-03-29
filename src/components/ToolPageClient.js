@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, ArrowRight, Sparkles } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import { Upload, FileText, ArrowRight, Sparkles, Coffee } from "lucide-react";
 import { saveTransientReview } from "@/lib/transientReview";
 import { registerCompletedFreeReview, shouldGateNextReview, unlockFullAccess } from "@/lib/freeCredits";
 import JobDescriptionInput from "@/components/JobDescriptionInput";
 import MockUnlockOverlay from "@/components/MockUnlockOverlay";
+import HonestFriendAvatar from "@/components/HonestFriendAvatar";
+import RolemateLogo from "@/components/RolemateLogo";
 
 const progressSteps = [
-  "Reading your resume...",
-  "Analyzing the role...",
-  "Building your mismatch matrix...",
-  "Writing your report..."
+  "Scanning for corporate buzzwords...",
+  "Calculating the odds of being ghosted...",
+  "Preparing the harsh truth..."
 ];
 
 const container = {
@@ -45,14 +45,99 @@ export default function ToolPageClient() {
   const [isUnlockProcessing, setIsUnlockProcessing] = useState(false);
   const [unlockSuccess, setUnlockSuccess] = useState(false);
   const [toastOpen, setToastOpen] = useState(false);
+  const [liveFeedback, setLiveFeedback] = useState("");
+  const [statusMessage, setStatusMessage] = useState(progressSteps[0]);
+  const [isTimeoutError, setIsTimeoutError] = useState(false);
 
   const canSubmit = useMemo(() => {
     const hasResume = Boolean(resumeFile) || manualResumeText.trim().length > 0;
     return hasResume && jobDescription.trim().length >= 100;
   }, [resumeFile, manualResumeText, jobDescription]);
 
+  useEffect(() => {
+    if (!isSubmitting) {
+      return undefined;
+    }
+
+    const timer = window.setInterval(() => {
+      setProgressIndex((current) => {
+        const next = (current + 1) % progressSteps.length;
+        setStatusMessage(progressSteps[next]);
+        return next;
+      });
+    }, 2200);
+
+    return () => window.clearInterval(timer);
+  }, [isSubmitting]);
+
+  async function readAnalyzeStream(response) {
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Stream unavailable.");
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let finalReview = null;
+    let streamError = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const events = buffer.split("\n\n");
+      buffer = events.pop() || "";
+
+      for (const block of events) {
+        const lines = block.split("\n");
+        const eventLine = lines.find((line) => line.startsWith("event:"));
+        const dataLine = lines.find((line) => line.startsWith("data:"));
+
+        if (!eventLine || !dataLine) {
+          continue;
+        }
+
+        const eventName = eventLine.replace("event:", "").trim();
+        const payload = JSON.parse(dataLine.replace("data:", "").trim());
+
+        if (eventName === "status") {
+          setStatusMessage(payload.message);
+        }
+
+        if (eventName === "feedback") {
+          setLiveFeedback((current) => `${current}${payload.chunk}`);
+        }
+
+        if (eventName === "result") {
+          finalReview = payload.review;
+        }
+
+        if (eventName === "error") {
+          streamError = payload.message;
+        }
+      }
+    }
+
+    if (streamError) {
+      throw new Error(streamError);
+    }
+
+    if (!finalReview) {
+      throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+    }
+
+    return finalReview;
+  }
+
   async function runSubmission() {
     setError("");
+    setIsTimeoutError(false);
+    setLiveFeedback("");
+    setStatusMessage(progressSteps[0]);
+    setProgressIndex(0);
     const formData = new FormData();
     if (resumeFile) {
       formData.append("resumePdf", resumeFile);
@@ -62,31 +147,33 @@ export default function ToolPageClient() {
     formData.append("jobTitle", jobTitle);
     formData.append("companyName", companyName);
 
-    let step = 0;
-    const timer = setInterval(() => {
-      step = Math.min(progressSteps.length - 1, step + 1);
-      setProgressIndex(step);
-    }, 1100);
-
     setIsSubmitting(true);
 
     try {
-      const result = await apiFetch("/api/reviews", {
+      const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
-        timeoutMs: 60000
+        credentials: "include"
       });
 
-      if (result.review?.transient) {
-        saveTransientReview(result.review);
+      if (!response.ok) {
+        throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+      }
+
+      const review = await readAnalyzeStream(response);
+
+      if (review?.transient) {
+        saveTransientReview(review);
       }
 
       registerCompletedFreeReview();
-      router.push(`/app/results/${result.review.id}`);
+      router.push(`/app/results/${review.id}`);
     } catch (requestError) {
-      setError(requestError.message || "Something went wrong while analyzing your resume.");
+      const message = requestError.message || "Something went wrong while analyzing your resume.";
+      const timedOut = /coffee break|too long|timed out|5 seconds/i.test(message);
+      setIsTimeoutError(timedOut);
+      setError(message);
     } finally {
-      clearInterval(timer);
       setIsSubmitting(false);
     }
   }
@@ -174,7 +261,10 @@ export default function ToolPageClient() {
             <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">Resume Intake</div>
             <h2 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-ink">Upload a PDF resume</h2>
 
-            <label className="mt-6 flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-[1.75rem] border border-dashed border-white/14 bg-white/[0.03] p-8 text-center transition hover:border-white/22 hover:bg-white/[0.05]">
+            <label className="relative mt-6 flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-white/14 bg-white/[0.03] p-8 text-center transition hover:border-white/22 hover:bg-white/[0.05]">
+              <div className="absolute inset-y-0 right-4 hidden items-center opacity-[0.08] transition hover:opacity-[0.14] md:flex">
+                <RolemateLogo size={180} withWordmark={false} watermark />
+              </div>
               <Upload className="h-10 w-10 text-cyan-300" />
               <div className="mt-4 text-lg text-ink">{resumeFile ? resumeFile.name : "Drag in a PDF or click to browse"}</div>
               <div className="mt-2 text-sm text-slate">PDF only, max 5MB</div>
@@ -239,13 +329,38 @@ export default function ToolPageClient() {
                 disabled={!canSubmit || isSubmitting || resumeFile?.size > 5 * 1024 * 1024}
                 className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/55"
               >
-                {isSubmitting ? progressSteps[progressIndex] : "Analyze honestly"}
+                {isSubmitting ? statusMessage : "Analyze honestly"}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
 
+            {isSubmitting ? (
+              <div className="mt-5 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
+                <div className="flex items-center gap-3">
+                  <HonestFriendAvatar />
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">Honest Friend live feed</div>
+                    <div className="mt-1 text-sm text-white/68">{statusMessage}</div>
+                  </div>
+                </div>
+                <p className="mt-4 min-h-[96px] max-w-3xl text-sm leading-8 text-white/78">
+                  {liveFeedback || "Rolemate is reading the room before it says the quiet part out loud."}
+                </p>
+              </div>
+            ) : null}
+
             {error ? (
-              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</div>
+              isTimeoutError ? (
+                <div className="mt-4 rounded-[1.5rem] border border-amber-400/18 bg-amber-400/10 p-5 text-amber-100">
+                  <div className="flex items-center gap-3">
+                    <Coffee className="h-5 w-5 text-amber-300" />
+                    <div className="text-sm font-semibold uppercase tracking-[0.18em]">Honest Friend</div>
+                  </div>
+                  <div className="mt-3 text-base leading-8">{error}</div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</div>
+              )
             ) : null}
           </div>
         </form>

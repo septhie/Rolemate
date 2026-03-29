@@ -1,5 +1,6 @@
 const { callOpenAIJson } = require("../api/openai");
 const { buildJobAnalyzerPrompt } = require("../prompts/jobAnalyzerPrompt");
+const { condenseText } = require("../utils/promptCompression");
 
 const knownSkills = [
   "excel",
@@ -53,11 +54,13 @@ function fallbackJobAnalysis(jobDescription, { jobTitle, companyName }) {
 }
 
 async function analyzeJobDescription({ jobDescription, jobTitle, companyName, runContext }) {
+  const condensedJobDescription = condenseText(jobDescription, 5200);
+
   return callOpenAIJson({
     taskName: "job-analyzer",
     runContext,
     systemPrompt: buildJobAnalyzerPrompt(),
-    userPrompt: `Job title: ${jobTitle || "Unknown"}\nCompany: ${companyName || "Unknown"}\n\nJob description:\n${jobDescription}`,
+    userPrompt: `Job title: ${jobTitle || "Unknown"}\nCompany: ${companyName || "Unknown"}\n\nJob description:\n${condensedJobDescription}`,
     fallback: () => fallbackJobAnalysis(jobDescription, { jobTitle, companyName })
   });
 }

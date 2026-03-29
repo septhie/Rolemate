@@ -12,7 +12,7 @@ function getClient() {
   if (!client) {
     client = new OpenAI({
       apiKey: env.openAiApiKey,
-      timeout: env.nodeEnv === "production" ? 12000 : 30000
+      timeout: env.nodeEnv === "production" ? 55000 : 30000
     });
   }
 
@@ -153,7 +153,75 @@ async function callOpenAIText({
   return result;
 }
 
+async function callOpenAITextStream({
+  taskName,
+  systemPrompt,
+  userPrompt,
+  temperature = 0.3,
+  onChunk,
+  fallback,
+  runContext
+}) {
+  const openai = getClient();
+
+  if (!openai) {
+    const fallbackText = fallback ? fallback() : "";
+    if (fallbackText && onChunk) {
+      const words = String(fallbackText).split(/\s+/).filter(Boolean);
+      for (const word of words) {
+        onChunk(`${word} `);
+      }
+    }
+    return fallbackText;
+  }
+
+  let combined = "";
+
+  try {
+    const stream = await openai.chat.completions.create({
+      model: env.openAiModel,
+      temperature,
+      stream: true,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ]
+    });
+
+    runContext.apiCallsMade += 1;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices?.[0]?.delta?.content || "";
+      if (!delta) {
+        continue;
+      }
+
+      combined += delta;
+      if (onChunk) {
+        onChunk(delta);
+      }
+    }
+  } catch (error) {
+    if (fallback) {
+      const fallbackText = fallback(error);
+      if (fallbackText && onChunk) {
+        const words = String(fallbackText).split(/\s+/).filter(Boolean);
+        for (const word of words) {
+          onChunk(`${word} `);
+        }
+      }
+      return fallbackText;
+    }
+
+    throw error;
+  }
+
+  devLog("openai-text-stream", { taskName, result: combined });
+  return combined;
+}
+
 module.exports = {
   callOpenAIJson,
-  callOpenAIText
+  callOpenAIText,
+  callOpenAITextStream
 };

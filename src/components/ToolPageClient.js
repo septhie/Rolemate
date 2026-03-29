@@ -17,9 +17,9 @@ const progressSteps = [
 ];
 
 const floatingChips = [
-  { label: "ATS Scan", className: "left-[6%] top-[14%]" },
-  { label: "Tone Check", className: "right-[18%] top-[10%]" },
-  { label: "Red Flags", className: "right-[8%] top-[28%]" }
+  { label: "ATS Scan", className: "left-[4%] top-[8%]" },
+  { label: "Tone Check", className: "right-[12%] top-[6%]" },
+  { label: "Red Flags", className: "right-[4%] top-[20%]" }
 ];
 
 function OrganicUploadPanel({
@@ -45,9 +45,9 @@ function OrganicUploadPanel({
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="relative"
     >
-      <div className="glass-panel relative overflow-hidden rounded-[34%_66%_58%_42%/22%_26%_74%_78%] px-[4vw] py-[4.8vh]">
+      <div className="glass-panel relative overflow-hidden rounded-[2.8rem] px-[3.2vw] py-[4vh]">
         <div className="pointer-events-none absolute -right-[5vw] top-[2vh] opacity-[0.06]">
-          <RolemateLogo size={170} withWordmark={false} watermark />
+          <RolemateLogo size={140} withWordmark={false} watermark />
         </div>
 
         <div className="relative">
@@ -56,10 +56,10 @@ function OrganicUploadPanel({
             Drop the resume, paste the role, and let Rolemate turn the right side of the canvas into an honest live feed.
           </div>
 
-          <label className="mt-[3.4vh] flex aspect-video cursor-pointer flex-col items-center justify-center rounded-[2.2rem] border border-dashed border-white/12 bg-white/[0.03] text-center transition hover:border-white/22">
+          <label className="mt-[3vh] flex aspect-video cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed border-white/12 bg-white/[0.03] text-center transition hover:border-white/22">
             <Upload className="h-10 w-10 text-[#ffcf57]" />
             <div className="mt-4 text-[1.08rem] text-white">{resumeFile ? resumeFile.name : "Drop a PDF or tap to upload"}</div>
-            <div className="mt-2 text-[0.78rem] uppercase tracking-[0.22em] text-white/36">PDF only • 5MB max</div>
+            <div className="mt-2 text-[0.78rem] uppercase tracking-[0.22em] text-white/36">PDF only | 5MB max</div>
             <input
               type="file"
               accept="application/pdf"
@@ -87,11 +87,11 @@ function OrganicUploadPanel({
             <textarea
               value={jobDescription}
               onChange={(event) => setJobDescription(event.target.value)}
-              className="field-shell min-h-[24vh] rounded-[2rem] px-5 py-5 text-[0.92rem] leading-8"
+              className="field-shell min-h-[22vh] rounded-[1.7rem] px-5 py-5 text-[0.92rem] leading-8"
               placeholder="Paste the full job description here."
             />
 
-            <div className="glass-panel rounded-[2rem] p-4">
+            <div className="glass-panel rounded-[1.7rem] p-4">
               <div className="flex items-center gap-3 text-[0.76rem] uppercase tracking-[0.22em] text-white/42">
                 <FileText className="h-4 w-4 text-[#ffcf57]" />
                 Resume fallback
@@ -99,7 +99,7 @@ function OrganicUploadPanel({
               <textarea
                 value={manualResumeText}
                 onChange={(event) => setManualResumeText(event.target.value)}
-                className="field-shell mt-3 min-h-[15vh] rounded-[1.5rem] px-5 py-5 text-[0.88rem] leading-8"
+                className="field-shell mt-3 min-h-[14vh] rounded-[1.4rem] px-5 py-5 text-[0.88rem] leading-8"
                 placeholder="If extraction misses anything, paste your resume text here."
               />
             </div>
@@ -387,7 +387,7 @@ export default function ToolPageClient() {
     }
 
     if (!finalReview) {
-      throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+      throw new Error("Even I need a coffee break. The server took too long. Refresh and try again in 5 seconds.");
     }
 
     return finalReview;
@@ -418,7 +418,7 @@ export default function ToolPageClient() {
       });
 
       if (!response.ok) {
-        throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+        throw new Error("Even I need a coffee break. The server took too long. Refresh and try again in 5 seconds.");
       }
 
       const review = await readAnalyzeStream(response);
@@ -482,20 +482,20 @@ export default function ToolPageClient() {
       </AnimatePresence>
 
       <main className="min-h-screen w-full">
-        <section className="grid min-h-screen w-full grid-cols-1 pb-[5.5vh] pl-20 lg:grid-cols-[40vw_1fr]">
+        <section className="grid min-h-screen w-full grid-cols-1 pb-[5.5vh] pl-20 lg:grid-cols-[minmax(24rem,38vw)_minmax(0,1fr)] xl:grid-cols-[minmax(28rem,40vw)_minmax(0,1fr)]">
           <div className="relative min-h-[44vh] border-b border-white/8 lg:min-h-screen lg:border-b-0">
-            <div className="flex h-full min-h-[44vh] items-end px-[6vw] pb-[10vh] pt-[14vh] lg:sticky lg:top-0 lg:min-h-[calc(100vh-5.5vh)]">
+            <div className="flex h-full min-h-[44vh] items-end px-[4vw] pb-[8vh] pt-[12vh] lg:sticky lg:top-0 lg:min-h-[calc(100vh-5.5vh)] xl:px-[5vw] xl:pb-[10vh]">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-                className="max-w-[26rem]"
+                className="max-w-[32rem]"
               >
                 <div className="text-[0.72rem] uppercase tracking-[0.34em] text-[#ffcf57]">Rolemate Canvas</div>
-                <h1 className="font-display mt-[3vh] text-[clamp(3.6rem,7vw,8.2rem)] leading-[0.9] tracking-[-0.07em] text-[#f5f5f5]">
+                <h1 className="font-display mt-[2.6vh] text-[clamp(3.2rem,5.6vw,6.8rem)] leading-[0.92] tracking-[-0.07em] text-[#f5f5f5]">
                   The Truth About Your Career.
                 </h1>
-                <p className="analysis-text mt-[3vh] max-w-[22rem] text-[0.9rem] leading-8 text-white/56">
+                <p className="analysis-text mt-[2.4vh] max-w-[24rem] text-[0.9rem] leading-8 text-white/56">
                   Honest-first resume reviews for students who need signal, not fluff. Upload on the right. Watch the truth stream in live.
                 </p>
               </motion.div>
@@ -503,16 +503,16 @@ export default function ToolPageClient() {
           </div>
 
           <div className="relative min-h-[56vh] overflow-hidden">
-            <div className={`relative h-full min-h-[calc(100vh-5.5vh)] overflow-y-auto px-[4vw] py-[7vh] transition duration-300 ${rightColumnBlurred ? "blur-xl" : ""}`}>
-              <div className="relative mx-auto flex w-full max-w-[54rem] flex-col gap-[3vh]">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-[36vh]">
+            <div className={`relative h-full min-h-[calc(100vh-5.5vh)] overflow-y-auto px-[3vw] py-[6vh] transition duration-300 ${rightColumnBlurred ? "blur-xl" : ""}`}>
+              <div className="relative flex w-full flex-col gap-[2.6vh]">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-[28vh]">
                   {floatingChips.map((chip, index) => (
                     <motion.div
                       key={chip.label}
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.08 * index, duration: 0.45 }}
-                      className={`absolute ${chip.className} inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[0.66rem] uppercase tracking-[0.26em] text-white/60 shadow-[0_18px_40px_rgba(0,0,0,0.26)]`}
+                      className={`absolute ${chip.className} inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[0.62rem] uppercase tracking-[0.24em] text-white/60 shadow-[0_18px_40px_rgba(0,0,0,0.26)]`}
                     >
                       <Grip className="h-3.5 w-3.5 text-[#ffcf57]" />
                       {chip.label}

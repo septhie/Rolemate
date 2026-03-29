@@ -160,6 +160,11 @@ textarea {
   letter-spacing: -0.03em;
 }
 
+.analysis-body {
+  font-size: clamp(0.875rem, 1.2vw, 1.1rem);
+  line-height: 1.9;
+}
+
 .text-ink {
   color: var(--text);
 }
@@ -182,12 +187,12 @@ textarea {
 }
 
 .honesty-column {
-  width: min(95%, 900px);
+  width: min(100%, 1200px);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .studio-stage {
-    grid-template-columns: 45% 55%;
+    grid-template-columns: 1fr 1fr;
   }
 }
 

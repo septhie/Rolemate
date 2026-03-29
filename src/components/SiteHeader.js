@@ -32,7 +32,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 flex w-20 flex-col items-center justify-between border-r border-white/10 bg-black/30 py-[3vh] backdrop-blur-3xl">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col items-center justify-between border-r border-white/10 bg-black/30 py-[3vh] backdrop-blur-3xl lg:flex">
         <div className="flex flex-col items-center gap-[3.4vh]">
           <RolemateLogo size={42} withWordmark={false} />
           <nav className="flex flex-col items-center gap-[1.6vh]">
@@ -76,7 +76,30 @@ export default function SiteHeader() {
         </div>
       </aside>
 
-      <div className="fixed bottom-0 left-20 right-0 z-40 flex h-[5.5vh] min-h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-[3vw] text-[0.68rem] uppercase tracking-[0.24em] text-white/42 backdrop-blur-[20px]">
+      <nav className="fixed inset-x-0 bottom-[42px] z-40 flex h-14 items-center justify-around border-t border-white/10 bg-black/55 px-4 backdrop-blur-md lg:hidden">
+        {links.map((link) => {
+          const Icon = link.icon;
+          const active = pathname === link.href;
+
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-label={link.label}
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-2xl border border-transparent transition",
+                active
+                  ? "bg-[#ffb800]/14 text-[#ffcf57]"
+                  : "text-white/48 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-4 text-[0.62rem] uppercase tracking-[0.22em] text-white/42 backdrop-blur-md lg:left-20 lg:h-[5.5vh] lg:min-h-[42px] lg:px-[3vw] lg:text-[0.68rem] lg:backdrop-blur-[20px]">
         <div className="flex items-center gap-[1.2vw]">
           <span className="h-2 w-2 rounded-full bg-[#ffb800] shadow-[0_0_16px_rgba(255,184,0,0.35)]" />
           <span>Student-to-student honest analysis</span>

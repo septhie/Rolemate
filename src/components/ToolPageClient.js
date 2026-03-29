@@ -52,7 +52,7 @@ function OrganicUploadPanel({
 
         <div className="relative">
           <div className="text-[0.68rem] uppercase tracking-[0.32em] text-[#ffcf57]">Upload Engine</div>
-          <div className="mt-[1.8vh] max-w-[28rem] text-[0.92rem] leading-7 text-white/54">
+          <div className="analysis-body mt-[1.8vh] max-w-[28rem] text-white/54">
             Drop the resume, paste the role, and let Rolemate turn the right side of the canvas into an honest live feed.
           </div>
 
@@ -139,7 +139,7 @@ function LoadingCards({ statusMessage, liveFeedback }) {
             <div className="mt-2 text-[0.82rem] uppercase tracking-[0.18em] text-white/42">{statusMessage}</div>
           </div>
         </div>
-        <div className="analysis-text mt-[3.2vh] min-h-[26vh] text-[0.95rem] leading-8 text-[#f5f5f5]">
+        <div className="analysis-text analysis-body mt-[3.2vh] min-h-[26vh] text-[#f5f5f5]">
           {liveFeedback || "Rolemate is reading the role, checking your claims, and deciding how blunt it needs to be."}
         </div>
       </motion.div>
@@ -151,7 +151,7 @@ function LoadingCards({ statusMessage, liveFeedback }) {
         className="glass-panel relative w-full rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:bottom-[10%] 2xl:left-[6%] 2xl:w-[52%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Live filter</div>
-        <div className="analysis-text mt-4 text-[0.82rem] leading-7 text-white/66">
+        <div className="analysis-text analysis-body mt-4 text-white/66">
           Streaming in real time so the session never idles out while the Honest Friend builds the case.
         </div>
       </motion.div>
@@ -181,7 +181,7 @@ function ResultCards({ review }) {
         <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
           <div>
             <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">Harsh Truth</div>
-            <p className="analysis-text mt-5 max-w-[36rem] text-[0.94rem] leading-8 text-[#f5f5f5]">
+            <p className="analysis-text analysis-body mt-5 max-w-[36rem] text-[#f5f5f5]">
               {review.redFlags?.honestAssessment || "Rolemate found both strengths and real friction in your fit."}
             </p>
           </div>
@@ -198,7 +198,7 @@ function ResultCards({ review }) {
         className="glass-panel relative z-10 w-full rounded-[2.1rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:left-[2%] 2xl:top-[34%] 2xl:w-[54%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">What&apos;s Working</div>
-        <ul className="analysis-text mt-4 space-y-3 text-[0.82rem] leading-7 text-white/76">
+        <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/76">
           {(review.strengths || []).slice(0, 4).map((item, index) => (
             <li key={`strength-${index}`}>{item}</li>
           ))}
@@ -214,7 +214,7 @@ function ResultCards({ review }) {
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
             <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Missing / Gaps</div>
-            <ul className="analysis-text mt-4 space-y-3 text-[0.82rem] leading-7 text-white/72">
+            <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/72">
               {(review.weaknesses || []).slice(0, 4).map((item, index) => (
                 <li key={`weakness-${index}`}>{item}</li>
               ))}
@@ -259,13 +259,19 @@ function ResultCards({ review }) {
 
 function MemberEntryInvite({ isProcessing, isUnlocked, onContinue }) {
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center px-[4vw]">
-      <div className="glass-panel-strong w-full max-w-[34rem] rounded-[2.2rem] p-8">
+    <motion.div
+      initial={{ opacity: 0, y: 48 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 48 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed inset-x-0 bottom-[42px] z-30 flex items-end justify-center bg-black/28 px-4 pb-4 pt-10 md:absolute md:inset-0 md:items-center md:px-[4vw] md:pb-0 md:pt-0"
+    >
+      <div className="glass-panel-strong w-full max-w-[34rem] rounded-[2rem] p-6 md:rounded-[2.2rem] md:p-8">
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">Member Entry</div>
         <h3 className="font-display mt-4 text-[2.4rem] leading-none tracking-[-0.05em] text-[#f5f5f5]">
           Save your progress.
         </h3>
-        <p className="analysis-text mt-5 text-[0.86rem] leading-8 text-white/68">
+        <p className="analysis-text analysis-body mt-5 text-white/68">
           You&apos;re on a roll. Sign in with Google to save your history, track your ATS score over time, and keep your Honest Friend in your corner.
         </p>
         <button
@@ -277,7 +283,7 @@ function MemberEntryInvite({ isProcessing, isUnlocked, onContinue }) {
           {isProcessing ? "Processing..." : isUnlocked ? "Success!" : "Continue with Google"}
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -294,7 +300,7 @@ function ErrorCard({ error }) {
     >
       <div className="flex items-start gap-3">
         <Coffee className="mt-1 h-4 w-4 text-[#ffcf57]" />
-        <p className="analysis-text text-[0.82rem] leading-7 text-[#f5f5f5]">{error}</p>
+        <p className="analysis-text analysis-body text-[#f5f5f5]">{error}</p>
       </div>
     </motion.div>
   );
@@ -481,10 +487,10 @@ export default function ToolPageClient() {
         ) : null}
       </AnimatePresence>
 
-      <main className="min-h-screen w-full">
-        <section className="studio-stage min-h-screen w-full pb-[5.5vh] pl-20">
+      <main className="min-h-screen w-full overflow-x-hidden">
+        <section className="studio-stage min-h-screen w-full pb-[104px] lg:pb-[5.5vh] lg:pl-20">
           <div className="relative min-h-[44vh] border-b border-white/8 lg:min-h-screen lg:border-b-0">
-            <div className="flex h-full min-h-[44vh] items-end px-[4vw] pb-[8vh] pt-[12vh] lg:sticky lg:top-0 lg:min-h-[calc(100vh-5.5vh)] xl:px-[5vw] xl:pb-[10vh]">
+            <div className="flex h-full min-h-[44vh] items-end px-[5vw] pb-[6vh] pt-[11vh] md:px-[4vw] md:pb-[8vh] md:pt-[12vh] lg:sticky lg:top-0 lg:min-h-[calc(100vh-5.5vh)] xl:px-[5vw] xl:pb-[10vh]">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -495,7 +501,7 @@ export default function ToolPageClient() {
                 <h1 className="font-display mt-[2.6vh] text-[clamp(2.5rem,5vw,6rem)] leading-[1.1] tracking-[-0.07em] text-[#f5f5f5]">
                   The Truth About Your Career.
                 </h1>
-                <p className="analysis-text mt-[2.4vh] max-w-[24rem] text-[0.9rem] leading-8 text-white/56">
+                <p className="analysis-text analysis-body mt-[2.4vh] max-w-[24rem] text-white/56">
                   Honest-first resume reviews for students who need signal, not fluff. Upload on the right. Watch the truth stream in live.
                 </p>
               </motion.div>
@@ -503,8 +509,8 @@ export default function ToolPageClient() {
           </div>
 
           <div className="studio-right-column relative min-h-[56vh]">
-            <div className={`relative h-full min-h-[calc(100vh-5.5vh)] overflow-y-auto px-[3vw] py-[6vh] transition duration-300 ${rightColumnBlurred ? "blur-xl" : ""}`}>
-              <div className="honesty-column relative flex w-full flex-col gap-[2.6vh]">
+            <div className={`relative h-full min-h-[calc(100vh-5.5vh)] overflow-y-auto px-[5vw] py-[4vh] transition duration-300 md:px-[3vw] md:py-[6vh] ${rightColumnBlurred ? "blur-xl" : ""}`}>
+              <div className="honesty-column relative mx-auto flex w-full flex-col gap-[2.6vh]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-[28vh]">
                   {floatingChips.map((chip, index) => (
                     <motion.div
@@ -543,7 +549,7 @@ export default function ToolPageClient() {
                         <Sparkles className="h-4 w-4" />
                         What Rolemate checks
                       </div>
-                      <div className="analysis-text mt-4 grid gap-3 text-[0.82rem] leading-7 text-white/66 sm:grid-cols-3">
+                      <div className="analysis-text analysis-body mt-4 grid gap-3 text-white/66 sm:grid-cols-3">
                         <div>Keyword truth versus the JD</div>
                         <div>Real transferable skills hiding in plain sight</div>
                         <div>Harsh gaps the resume still cannot cover</div>
@@ -552,7 +558,7 @@ export default function ToolPageClient() {
 
                     <div className="glass-panel rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)]">
                       <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Guest mode</div>
-                      <div className="analysis-text mt-4 text-[0.82rem] leading-7 text-white/62">
+                      <div className="analysis-text analysis-body mt-4 text-white/62">
                         Three full reviews free. The fourth asks you to save your progress.
                       </div>
                     </div>
@@ -572,18 +578,11 @@ export default function ToolPageClient() {
 
             <AnimatePresence>
               {showInvite ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-20 bg-black/24"
-                >
-                  <MemberEntryInvite
-                    isProcessing={isUnlockProcessing}
-                    isUnlocked={unlockSuccess}
-                    onContinue={handleMemberEntry}
-                  />
-                </motion.div>
+                <MemberEntryInvite
+                  isProcessing={isUnlockProcessing}
+                  isUnlocked={unlockSuccess}
+                  onContinue={handleMemberEntry}
+                />
               ) : null}
             </AnimatePresence>
           </div>

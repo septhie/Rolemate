@@ -129,9 +129,9 @@ function LoadingCards({ statusMessage, liveFeedback }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 60 }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-h-[56vh]"
+      className="relative flex flex-col gap-4 xl:min-h-[56vh] xl:block"
     >
-      <motion.div className="glass-panel-strong absolute right-0 top-0 w-[88%] rounded-[2.3rem] p-[2.4rem]">
+      <motion.div className="glass-panel-strong relative w-full rounded-[2.3rem] p-[2.4rem] xl:absolute xl:right-0 xl:top-0 xl:w-[88%]">
         <div className="flex items-center gap-4">
           <HonestFriendAvatar />
           <div>
@@ -148,7 +148,7 @@ function LoadingCards({ statusMessage, liveFeedback }) {
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.08, duration: 0.5 }}
-        className="glass-panel absolute bottom-[10%] left-[6%] w-[52%] rounded-[2rem] p-5"
+        className="glass-panel relative w-full rounded-[2rem] p-5 xl:absolute xl:bottom-[10%] xl:left-[6%] xl:w-[52%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Live filter</div>
         <div className="analysis-text mt-4 text-[0.82rem] leading-7 text-white/66">
@@ -170,22 +170,22 @@ function ResultCards({ review }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 60 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="relative min-h-[70vh]"
+      className="relative flex flex-col gap-4 xl:min-h-[70vh] xl:block"
     >
       <motion.article
         initial={{ opacity: 0, x: 80 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.04, duration: 0.5 }}
-        className="glass-panel-strong absolute right-0 top-0 z-20 w-[86%] rounded-[2.4rem] p-[2.6rem]"
+        className="glass-panel-strong relative z-20 w-full rounded-[2.4rem] p-[2.1rem] xl:absolute xl:right-0 xl:top-0 xl:w-[86%] xl:p-[2.6rem]"
       >
-        <div className="flex items-start justify-between gap-6">
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">Harsh Truth</div>
             <p className="analysis-text mt-5 max-w-[36rem] text-[0.94rem] leading-8 text-[#f5f5f5]">
               {review.redFlags?.honestAssessment || "Rolemate found both strengths and real friction in your fit."}
             </p>
           </div>
-          <div className="shrink-0 scale-[0.78] origin-top-right">
+          <div className="shrink-0 self-start xl:scale-[0.78] xl:origin-top-right">
             <ScoreGauge score={review.fitScore} />
           </div>
         </div>
@@ -195,7 +195,7 @@ function ResultCards({ review }) {
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.12, duration: 0.5 }}
-        className="glass-panel absolute left-[2%] top-[34%] z-10 w-[54%] rounded-[2.1rem] p-6"
+        className="glass-panel relative z-10 w-full rounded-[2.1rem] p-6 xl:absolute xl:left-[2%] xl:top-[34%] xl:w-[54%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">What&apos;s Working</div>
         <ul className="analysis-text mt-4 space-y-3 text-[0.82rem] leading-7 text-white/76">
@@ -209,7 +209,7 @@ function ResultCards({ review }) {
         initial={{ opacity: 0, x: 70 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.18, duration: 0.5 }}
-        className="glass-panel absolute bottom-0 right-[4%] z-30 w-[62%] rounded-[2rem] p-6"
+        className="glass-panel relative z-30 w-full rounded-[2rem] p-6 xl:absolute xl:bottom-0 xl:right-[4%] xl:w-[62%]"
       >
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <div>

@@ -20,36 +20,106 @@ const knownSkills = [
   "communication",
   "customer service",
   "data analysis",
-  "google sheets"
+  "google sheets",
+  "google analytics",
+  "social media",
+  "content calendars",
+  "financial modeling",
+  "valuation",
+  "powerpoint",
+  "debugging",
+  "git",
+  "apis",
+  "testing",
+  "cloud deployment",
+  "analytics",
+  "writing",
+  "collaboration",
+  "organization",
+  "marketing",
+  "brand support"
 ];
 
 function inferExperienceLevel(text) {
   const lower = text.toLowerCase();
-  if (/senior|7\+ years|8\+ years|leadership experience/.test(lower)) {
+  if (/senior|director|8\+ years|7\+ years|leadership experience/.test(lower)) {
     return "senior";
   }
-  if (/3\+ years|5\+ years|mid-level|manager/.test(lower)) {
+  if (/3\+ years|4\+ years|5\+ years|mid-level|manager|experienced/.test(lower)) {
     return "mid";
   }
   return "entry";
 }
 
+function splitLines(jobDescription) {
+  return jobDescription
+    .split(/\n|(?<=[.!?])\s+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function extractSkillsFromText(text) {
+  const lower = text.toLowerCase();
+  return knownSkills.filter((skill) => lower.includes(skill));
+}
+
+function unique(items = []) {
+  return Array.from(new Set(items.filter(Boolean)));
+}
+
 function fallbackJobAnalysis(jobDescription, { jobTitle, companyName }) {
   const lower = jobDescription.toLowerCase();
-  const requiredSkills = knownSkills.filter((skill) => lower.includes(skill));
-  const lines = jobDescription.split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = splitLines(jobDescription);
+  const requiredSkills = [];
+  const preferredSkills = [];
+  const keyResponsibilities = [];
+  const minimumQualifications = [];
+
+  for (const line of lines) {
+    const lineLower = line.toLowerCase();
+    const skills = extractSkillsFromText(line);
+
+    if (/nice to have|preferred|bonus|plus/i.test(lineLower)) {
+      preferredSkills.push(...skills);
+      continue;
+    }
+
+    if (/require|must|qualification|experience with|proficient|strong /i.test(lineLower)) {
+      requiredSkills.push(...skills);
+      minimumQualifications.push(line.replace(/^[-*•]\s*/, ""));
+    }
+
+    if (/responsib|build|collaborate|write|ship|execute|coordinate|support|manage|track|review/i.test(lineLower)) {
+      keyResponsibilities.push(line.replace(/^[-*•]\s*/, ""));
+    }
+  }
+
+  const fallbackRequired = requiredSkills.length ? requiredSkills : extractSkillsFromText(jobDescription).slice(0, 8);
+  const titleKeywords = (jobTitle || "")
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 2);
 
   return {
-    requiredSkills,
-    preferredSkills: [],
+    requiredSkills: unique(fallbackRequired),
+    preferredSkills: unique(preferredSkills),
     experienceLevel: inferExperienceLevel(jobDescription),
-    keyResponsibilities: lines.filter((line) => /^[•*-]/.test(line) || /responsib/.test(line.toLowerCase())).slice(0, 8).map((item) => item.replace(/^[•*-]\s*/, "")),
-    industryKeywords: Array.from(new Set([...requiredSkills, ...jobDescription.match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []])).slice(0, 15),
+    keyResponsibilities: unique(keyResponsibilities).slice(0, 8),
+    industryKeywords: unique([
+      ...fallbackRequired,
+      ...preferredSkills,
+      ...titleKeywords,
+      ...(jobDescription.match(/\b[A-Z][a-zA-Z]{3,}\b/g) || [])
+    ]).slice(0, 18),
     toneSignals: {
-      style: /startup|fast-paced|scrappy|build/i.test(lower) ? "casual/startup" : "formal/corporate",
+      style: /jpmorgan|jp morgan|bank|analyst|coordinator|consumer brand|global|regulated|cross-functional/i.test(lower)
+        ? "formal/corporate"
+        : /startup|fast-paced|scrappy|build/i.test(lower)
+          ? "casual/startup"
+          : "formal/corporate",
       evidence: [jobTitle, companyName].filter(Boolean)
     },
-    minimumQualifications: lines.filter((line) => /require|qualif|must have/i.test(line)).slice(0, 6)
+    minimumQualifications: unique(minimumQualifications).slice(0, 6)
   };
 }
 

@@ -2,6 +2,209 @@ const { callOpenAIJson } = require("../api/openai");
 const { buildResumeParserPrompt } = require("../prompts/resumeParserPrompt");
 const { condenseText } = require("../utils/promptCompression");
 
+const knownSkillTerms = [
+  "python",
+  "react",
+  "javascript",
+  "typescript",
+  "java",
+  "excel",
+  "powerpoint",
+  "google analytics",
+  "google sheets",
+  "sql",
+  "apis",
+  "api integrations",
+  "financial modeling",
+  "valuation",
+  "social media",
+  "content calendars",
+  "analytics",
+  "brand marketing",
+  "communication",
+  "customer service",
+  "leadership",
+  "debugging",
+  "git"
+];
+
+function normalizeBullet(line) {
+  return line.replace(/^[-*•]\s*/, "").trim();
+}
+
+function splitSentences(text) {
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function extractContactInfo(lines) {
+  const contactInfo = {
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    links: []
+  };
+
+  for (const line of lines.slice(0, 6)) {
+    if (!contactInfo.email && /\S+@\S+\.\S+/.test(line)) {
+      contactInfo.email = line.match(/\S+@\S+\.\S+/)?.[0] || "";
+    }
+
+    if (!contactInfo.phone && /(\+?\d[\d\s().-]{8,})/.test(line)) {
+      contactInfo.phone = line.match(/(\+?\d[\d\s().-]{8,})/)?.[0] || "";
+    }
+
+    if (!contactInfo.name && /^[A-Za-z ,.'-]{5,}$/.test(line) && !line.includes("@")) {
+      contactInfo.name = line;
+    }
+
+    const urls = line.match(/https?:\/\/\S+|linkedin\.com\/\S+|github\.com\/\S+/gi) || [];
+    if (urls.length) {
+      contactInfo.links.push(...urls);
+    }
+  }
+
+  contactInfo.links = Array.from(new Set(contactInfo.links));
+  return contactInfo;
+}
+
+function parseInlineEducation(text) {
+  const education = [];
+  const lower = text.toLowerCase();
+  const sentence = splitSentences(text).find((item) =>
+    /(major|gpa|freshman|sophomore|junior|senior|bachelor|b\.s|b\.a|student)/i.test(item)
+  );
+
+  if (!sentence) {
+    return education;
+  }
+
+  const degreeMatch = sentence.match(
+    /(finance|marketing|computer science|economics|accounting|business|engineering|data science)[^,.]{0,30}(major|student)|((freshman|sophomore|junior|senior)[^,.]{0,40})/i
+  );
+  const gpaMatch = text.match(/gpa[:\s]+([0-4]\.\d{1,2})/i);
+
+  education.push({
+    school: "",
+    degree: degreeMatch ? degreeMatch[0].trim() : "",
+    location: "",
+    dates: "",
+    bullets: [
+      gpaMatch ? `GPA ${gpaMatch[1]}` : "",
+      /(senior|junior|sophomore|freshman)/i.test(sentence) ? sentence.match(/(senior|junior|sophomore|freshman)/i)?.[0] : ""
+    ].filter(Boolean)
+  });
+
+  return education;
+}
+
+function parseInlineWork(text) {
+  const sentences = splitSentences(text);
+  const workEntries = [];
+
+  for (const sentence of sentences) {
+    if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald)/i.test(sentence)) {
+      continue;
+    }
+
+    const roleMatch =
+      sentence.match(/([A-Z][A-Za-z&/ ]+(Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager))/) ||
+      sentence.match(/(McDonald's Crew Member)/i) ||
+      sentence.match(/(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)/i);
+
+    const durationMatch = sentence.match(/(\d+\s*(year|month)s?)/i);
+    const companyMatch =
+      sentence.match(/at ([A-Z][A-Za-z0-9&' .-]+)/) ||
+      sentence.match(/for ([A-Z][A-Za-z0-9&' .-]+ (club|company|startup))/i);
+
+    const bulletParts = sentence
+      .split(/,| and /)
+      .map((item) => item.trim())
+      .filter((item) => item.length > 3);
+
+    workEntries.push({
+      role: roleMatch ? roleMatch[0].trim() : sentence,
+      company: companyMatch ? companyMatch[1].trim() : "",
+      location: "",
+      dates: durationMatch ? durationMatch[1] : "",
+      bullets: bulletParts.slice(1).map(normalizeBullet)
+    });
+  }
+
+  return workEntries;
+}
+
+function parseInlineProjects(text) {
+  const sentences = splitSentences(text);
+  const projects = [];
+
+  for (const sentence of sentences) {
+    if (!/(project|portfolio|task manager|api integration|internal tool|built|created)/i.test(sentence)) {
+      continue;
+    }
+
+    if (/(intern|marketing intern|crew member)/i.test(sentence)) {
+      continue;
+    }
+
+    const projectNames = sentence.match(/task manager|portfolio site|api integrations?|internal tools?/gi) || [];
+    if (projectNames.length) {
+      projectNames.forEach((name) => {
+        projects.push({
+          name,
+          context: "",
+          bullets: [sentence]
+        });
+      });
+      continue;
+    }
+
+    projects.push({
+      name: sentence.slice(0, 60),
+      context: "",
+      bullets: [sentence]
+    });
+  }
+
+  return projects;
+}
+
+function parseInlineExtracurriculars(text) {
+  const items = [];
+  const sentences = splitSentences(text);
+
+  for (const sentence of sentences) {
+    if (!/(club|student organization|social media for|leadership|volunteer)/i.test(sentence)) {
+      continue;
+    }
+
+    items.push({
+      name: /club/i.test(sentence) ? "Student club" : "Extracurricular involvement",
+      role: /social media/i.test(sentence) ? "Social media lead/support" : "",
+      bullets: [sentence]
+    });
+  }
+
+  return items;
+}
+
+function parseInlineCertifications(text) {
+  const certs = [];
+  const matches = text.match(/google analytics( certified| certification)?/gi) || [];
+  matches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
+  return Array.from(new Set(certs));
+}
+
+function parseSkills(text) {
+  const lower = text.toLowerCase();
+  return knownSkillTerms
+    .filter((skill) => lower.includes(skill))
+    .map((skill) => skill.replace(/\b\w/g, (char) => char.toUpperCase()));
+}
+
 function splitByHeadings(text) {
   const headingMap = {
     summary: /summary|objective|profile/i,
@@ -15,7 +218,7 @@ function splitByHeadings(text) {
 
   const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
   const sections = {
-    contactInfo: {},
+    contactInfo: extractContactInfo(lines),
     summary: "",
     workExperience: [],
     education: [],
@@ -41,21 +244,9 @@ function splitByHeadings(text) {
     certifications: []
   };
 
-  lines.forEach((line, index) => {
-    if (index < 4) {
-      if (!sections.contactInfo.email && /\S+@\S+\.\S+/.test(line)) {
-        sections.contactInfo.email = line.match(/\S+@\S+\.\S+/)?.[0] || "";
-      }
-      if (!sections.contactInfo.phone && /(\+?\d[\d\s().-]{8,})/.test(line)) {
-        sections.contactInfo.phone = line.match(/(\+?\d[\d\s().-]{8,})/)?.[0] || "";
-      }
-      if (!sections.contactInfo.name && /^[A-Za-z ,.'-]{5,}$/.test(line) && !line.includes("@")) {
-        sections.contactInfo.name = line;
-      }
-    }
-
+  lines.forEach((line) => {
     const matchedHeading = Object.entries(headingMap).find(([, pattern]) => pattern.test(line));
-    if (matchedHeading && line.length < 32) {
+    if (matchedHeading && line.length < 40) {
       current = matchedHeading[0];
       return;
     }
@@ -63,8 +254,12 @@ function splitByHeadings(text) {
     buckets[current].push(line);
   });
 
-  sections.summary = buckets.summary.slice(0, 3).join(" ");
-  sections.skills = buckets.skills.join(" ").split(/[,|•]/).map((item) => item.trim()).filter(Boolean);
+  const hasExplicitHeadings = Object.values(buckets).some((bucket) => bucket.length > 1);
+
+  sections.summary = buckets.summary.slice(0, 4).join(" ") || text.slice(0, 240).trim();
+  sections.skills = buckets.skills.length
+    ? buckets.skills.join(" ").split(/[,|•]/).map((item) => item.trim()).filter(Boolean)
+    : parseSkills(text);
 
   const bucketToEntries = (items, defaultKey) => {
     if (!items.length) {
@@ -89,7 +284,7 @@ function splitByHeadings(text) {
 
     return chunks.map((chunk) => ({
       [defaultKey]: chunk[0] || "",
-      bullets: chunk.slice(1).map((line) => line.replace(/^[-•]\s*/, "")).filter(Boolean)
+      bullets: chunk.slice(1).map(normalizeBullet).filter(Boolean)
     }));
   };
 
@@ -117,7 +312,20 @@ function splitByHeadings(text) {
     role: "",
     bullets: entry.bullets
   }));
-  sections.certifications = buckets.certifications.join(" ").split(/[,|•]/).map((item) => item.trim()).filter(Boolean);
+  sections.certifications = buckets.certifications.length
+    ? buckets.certifications.join(" ").split(/[,|•]/).map((item) => item.trim()).filter(Boolean)
+    : parseInlineCertifications(text);
+
+  if (!hasExplicitHeadings) {
+    sections.workExperience = sections.workExperience.length ? sections.workExperience : parseInlineWork(text);
+    sections.education = sections.education.length ? sections.education : parseInlineEducation(text);
+    sections.projects = sections.projects.length ? sections.projects : parseInlineProjects(text);
+    sections.extracurriculars = sections.extracurriculars.length ? sections.extracurriculars : parseInlineExtracurriculars(text);
+    sections.certifications = sections.certifications.length ? sections.certifications : parseInlineCertifications(text);
+    if (!sections.skills.length) {
+      sections.skills = parseSkills(text);
+    }
+  }
 
   ["workExperience", "education", "skills"].forEach((section) => {
     const hasContent = Array.isArray(sections[section]) ? sections[section].length > 0 : Boolean(sections[section]);
@@ -126,10 +334,12 @@ function splitByHeadings(text) {
     }
   });
 
-  sections.workExperience.forEach((entry, index) => {
-    if (entry.bullets.length <= 1) {
-      sections.flags.sparseSections.push(`workExperience:${index}`);
-    }
+  ["workExperience", "projects", "education", "extracurriculars"].forEach((section) => {
+    sections[section].forEach((entry, index) => {
+      if ((entry.bullets || []).length <= 1) {
+        sections.flags.sparseSections.push(`${section}:${index}`);
+      }
+    });
   });
 
   return sections;

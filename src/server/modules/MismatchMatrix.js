@@ -1,5 +1,5 @@
 function normalizeArray(items = []) {
-  return items.map((item) => item.toLowerCase().trim()).filter(Boolean);
+  return items.map((item) => String(item).toLowerCase().trim()).filter(Boolean);
 }
 
 function getResumeCorpus(structuredResume) {
@@ -21,39 +21,68 @@ function keywordAppears(corpus, keyword) {
   return corpus.includes(keyword.toLowerCase());
 }
 
-function mapTransferableGap(gap, corpus) {
-  const lowerGap = gap.toLowerCase();
-  const mappings = [
-    { gap: "leadership", hints: ["led", "captain", "mentor", "trained", "group project"] },
-    { gap: "budget management", hints: ["cash", "drawer", "inventory", "reconciliation"] },
-    { gap: "data analysis", hints: ["excel", "google sheets", "reports", "metrics"] },
-    { gap: "project management", hints: ["organized", "timeline", "coordinated"] }
-  ];
+function getAliases(keyword) {
+  const lower = keyword.toLowerCase();
+  const aliasMap = {
+    javascript: ["js", "react", "frontend", "web applications"],
+    java: ["object-oriented", "backend"],
+    communication: ["social media", "customer service", "client presentations", "presentations", "cross-functional", "teamwork", "worked with"],
+    excel: ["spreadsheets", "google sheets", "metrics", "tracked engagement"],
+    analytics: ["google analytics", "tracked engagement", "performance reporting"],
+    python: ["python scripts", "automation"],
+    react: ["frontend features", "frontend", "web applications"],
+    marketing: ["campaign", "brand", "social media"],
+    writing: ["content", "copy", "social media"]
+  };
 
-  const match = mappings.find((item) => lowerGap.includes(item.gap));
-  if (!match) {
+  return aliasMap[lower] || [];
+}
+
+function mapTransferableGap(gap, corpus) {
+  const aliases = getAliases(gap);
+  const hint = aliases.find((candidate) => corpus.includes(candidate));
+  if (!hint) {
     return null;
   }
 
-  const hint = match.hints.find((candidate) => corpus.includes(candidate));
-  return hint ? `Transferable evidence found through ${hint}.` : null;
+  return `Transferable evidence found through ${hint}.`;
 }
 
 function scoreCompleteness(structuredResume) {
   const missing = structuredResume.flags?.missingCriticalSections?.length || 0;
   const sparse = structuredResume.flags?.sparseSections?.length || 0;
-  const base = 100 - missing * 20 - sparse * 8;
-  return Math.max(20, Math.min(100, base));
+  const sectionBonus =
+    (structuredResume.workExperience?.length ? 18 : 0) +
+    (structuredResume.education?.length ? 16 : 0) +
+    (structuredResume.skills?.length ? 16 : 0) +
+    (structuredResume.projects?.length ? 10 : 0) +
+    (structuredResume.certifications?.length ? 8 : 0) +
+    (structuredResume.extracurriculars?.length ? 8 : 0);
+
+  const base = 30 + sectionBonus - missing * 10 - sparse * 4;
+  return Math.max(35, Math.min(100, base));
 }
 
-function scoreExperienceRelevance(jobProfile, corpus) {
-  const responsibilities = normalizeArray(jobProfile.keyResponsibilities || []);
-  if (!responsibilities.length) {
-    return corpus.length > 200 ? 70 : 45;
+function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
+  const responsibilitySignals = normalizeArray(jobProfile.keyResponsibilities || [])
+    .flatMap((item) => item.split(/[,/]| and /))
+    .map((item) => item.trim())
+    .filter((item) => item.length >= 4)
+    .slice(0, 20);
+
+  const titleSignals = normalizeArray([jobProfile.jobTitle || ""]).flatMap((item) => item.split(/\s+/));
+  const skillSignals = normalizeArray([...(jobProfile.requiredSkills || []), ...(jobProfile.preferredSkills || [])]);
+
+  const candidateSignals = Array.from(new Set([...titleSignals, ...skillSignals, ...responsibilitySignals]))
+    .filter((item) => item.length >= 3);
+
+  if (!candidateSignals.length) {
+    return structuredResume.workExperience?.length || structuredResume.projects?.length ? 70 : 45;
   }
 
-  const matches = responsibilities.filter((item) => keywordAppears(corpus, item.slice(0, 24))).length;
-  return Math.max(20, Math.min(100, Math.round((matches / responsibilities.length) * 100)));
+  const matched = candidateSignals.filter((signal) => keywordAppears(corpus, signal) || mapTransferableGap(signal, corpus));
+  const score = Math.round((matched.length / candidateSignals.length) * 100);
+  return Math.max(25, Math.min(100, score));
 }
 
 function buildMismatchMatrix(structuredResume, jobProfile) {
@@ -82,15 +111,18 @@ function buildMismatchMatrix(structuredResume, jobProfile) {
   preferredSkills.forEach((skill) => {
     if (keywordAppears(corpus, skill)) {
       directMatches.push({ type: "preferred-skill", value: skill, evidence: "Found directly in the resume." });
-    } else {
-      softGaps.push({ type: "preferred-gap", value: skill, evidence: "Nice-to-have skill not shown directly." });
+    } else if (mapTransferableGap(skill, corpus)) {
+      softGaps.push({ type: "preferred-gap", value: skill, evidence: "Adjacent experience may support this skill." });
     }
   });
 
   const keywordMatchPercent = requiredSkills.length
-    ? Math.round((directMatches.filter((item) => item.type === "required-skill").length / requiredSkills.length) * 100)
+    ? Math.round(
+        ((directMatches.filter((item) => item.type === "required-skill").length + softGaps.length * 0.5) / requiredSkills.length) * 100
+      )
     : 100;
-  const experienceRelevancePercent = scoreExperienceRelevance(jobProfile, corpus);
+
+  const experienceRelevancePercent = scoreExperienceRelevance(jobProfile, corpus, structuredResume);
   const resumeCompletenessPercent = scoreCompleteness(structuredResume);
 
   const fitScore = Math.round(
@@ -115,4 +147,3 @@ function buildMismatchMatrix(structuredResume, jobProfile) {
 module.exports = {
   buildMismatchMatrix
 };
-

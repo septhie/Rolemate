@@ -18,8 +18,8 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 const statusMessages = [
-  "Scanning for corporate buzzwords...",
-  "Calculating the odds of being ghosted...",
+  "Scanning for BS...",
+  "Checking if you actually know Python...",
   "Preparing the harsh truth..."
 ];
 
@@ -217,7 +217,7 @@ export async function POST(request) {
       } catch (error) {
         send("error", {
           message:
-            error?.message || "Even I need a coffee break. The server took too long-refresh and try again in 5 seconds."
+            error?.message || "Even I need a coffee break. The server took too long. Refresh and try again in 5 seconds."
         });
       } finally {
         controller.close();
@@ -233,3 +233,4 @@ export async function POST(request) {
     }
   });
 }
+

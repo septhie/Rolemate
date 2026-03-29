@@ -256,7 +256,7 @@ export default function PreviewView({ reviewId, initialMode = "Strict" }) {
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <div className="text-xs uppercase tracking-[0.18em] text-violet-200">Preview Workspace</div>
+          <div className="text-xs uppercase tracking-[0.18em] text-[#efcf94]">Preview Workspace</div>
           <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-ink">Compare the original against the Rolemate draft</h1>
         </div>
         <div className="flex flex-wrap gap-3">

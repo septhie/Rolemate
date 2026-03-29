@@ -13,8 +13,8 @@ import HonestFriendAvatar from "@/components/HonestFriendAvatar";
 import RolemateLogo from "@/components/RolemateLogo";
 
 const progressSteps = [
-  "Scanning for corporate buzzwords...",
-  "Calculating the odds of being ghosted...",
+  "Scanning for BS...",
+  "Checking if you actually know Python...",
   "Preparing the harsh truth..."
 ];
 
@@ -126,7 +126,7 @@ export default function ToolPageClient() {
     }
 
     if (!finalReview) {
-      throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+      throw new Error("Even I need a coffee break. The server took too long. Refresh and try again in 5 seconds.");
     }
 
     return finalReview;
@@ -157,7 +157,7 @@ export default function ToolPageClient() {
       });
 
       if (!response.ok) {
-        throw new Error("Even I need a coffee break. The server took too long—refresh and try again in 5 seconds.");
+        throw new Error("Even I need a coffee break. The server took too long. Refresh and try again in 5 seconds.");
       }
 
       const review = await readAnalyzeStream(response);
@@ -221,9 +221,9 @@ export default function ToolPageClient() {
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed right-4 top-28 z-[80] rounded-2xl border border-emerald-400/20 bg-emerald-400/12 px-4 py-3 text-sm text-emerald-200 backdrop-blur-2xl"
+            className="fixed right-4 top-28 z-[80] rounded-2xl border border-[#d4a85c]/25 bg-[#d4a85c]/12 px-4 py-3 text-sm text-[#efcf94] backdrop-blur-2xl"
           >
-            Success! Your full Career Roadmap is unlocked.
+            Success! Your progress is ready to save.
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -236,20 +236,20 @@ export default function ToolPageClient() {
           className="mb-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
         >
           <motion.div variants={container} className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-violet-200">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#d4a85c]/15 bg-[#d4a85c]/6 px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">
               <Sparkles className="h-3.5 w-3.5" />
               Honest-first analysis
             </div>
-            <h1 className="mt-4 max-w-3xl text-5xl font-bold tracking-[-0.07em] text-ink sm:text-6xl">
-              Tailor your resume without pretending to be someone else.
+            <h1 className="font-display mt-4 max-w-3xl text-5xl tracking-[-0.06em] text-ink sm:text-6xl">
+              Your career deserves the truth.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate">
-              Rolemate finds the real fit, the real gaps, and the real evidence. When something is missing, it interviews you instead of making it up.
+              Three free guest reviews, no login, no awkward funnel. Just your resume, the role, and the kind of honest feedback a smart classmate would give you.
             </p>
           </motion.div>
 
           <motion.div variants={container} className="liquid-panel rounded-[2rem] p-6">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300">Review promise</div>
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Review promise</div>
             <div className="mt-4 text-lg leading-8 text-white/82">
               No invented jobs. No invented tools. No fake leadership. Only verified facts, stronger framing, and a clearer shot at the role.
             </div>
@@ -258,14 +258,14 @@ export default function ToolPageClient() {
 
         <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <div className="liquid-panel rounded-[2rem] p-6">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">Resume Intake</div>
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Resume Intake</div>
             <h2 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-ink">Upload a PDF resume</h2>
 
             <label className="relative mt-6 flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-white/14 bg-white/[0.03] p-8 text-center transition hover:border-white/22 hover:bg-white/[0.05]">
               <div className="absolute inset-y-0 right-4 hidden items-center opacity-[0.08] transition hover:opacity-[0.14] md:flex">
                 <RolemateLogo size={180} withWordmark={false} watermark />
               </div>
-              <Upload className="h-10 w-10 text-cyan-300" />
+              <Upload className="h-10 w-10 text-[#efcf94]" />
               <div className="mt-4 text-lg text-ink">{resumeFile ? resumeFile.name : "Drag in a PDF or click to browse"}</div>
               <div className="mt-2 text-sm text-slate">PDF only, max 5MB</div>
               <input
@@ -278,7 +278,7 @@ export default function ToolPageClient() {
 
             <div className="mt-6 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                <FileText className="h-4 w-4 text-violet-300" />
+                <FileText className="h-4 w-4 text-[#efcf94]" />
                 Manual text fallback
               </div>
               <textarea
@@ -339,7 +339,7 @@ export default function ToolPageClient() {
                 <div className="flex items-center gap-3">
                   <HonestFriendAvatar />
                   <div>
-                    <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">Honest Friend live feed</div>
+                    <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Honest Friend live feed</div>
                     <div className="mt-1 text-sm text-white/68">{statusMessage}</div>
                   </div>
                 </div>
@@ -368,3 +368,5 @@ export default function ToolPageClient() {
     </>
   );
 }
+
+

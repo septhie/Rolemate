@@ -13,9 +13,9 @@ import HonestFriendAvatar from "@/components/HonestFriendAvatar";
 
 function MatrixColumn({ title, items, accent }) {
   const accentMap = {
-    green: "border-emerald-400/12 bg-emerald-400/8 text-emerald-100",
-    amber: "border-amber-400/12 bg-amber-400/8 text-amber-100",
-    red: "border-red-400/12 bg-red-400/8 text-red-100"
+    green: "border-[#d4a85c]/18 bg-[#f5f5f5] text-[#111827]",
+    amber: "border-[#d4a85c]/18 bg-[#f5f5f5] text-[#111827]",
+    red: "border-[#d4a85c]/18 bg-[#f5f5f5] text-[#111827]"
   };
 
   return (
@@ -25,8 +25,8 @@ function MatrixColumn({ title, items, accent }) {
         {items.length ? (
           items.map((item, index) => (
             <div key={`${title}-${index}`} className={`rounded-[1.35rem] border px-4 py-3 text-sm ${accentMap[accent]}`}>
-              <div className="font-medium text-white">{item.value || item}</div>
-              {item.evidence ? <div className="mt-1 text-xs text-white/52">{item.evidence}</div> : null}
+              <div className="font-medium text-[#111827]">{item.value || item}</div>
+              {item.evidence ? <div className="mt-1 text-xs text-[#475569]">{item.evidence}</div> : null}
             </div>
           ))
         ) : (
@@ -143,7 +143,7 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
 
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="liquid-panel rounded-[2rem] p-6">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-emerald-300">ATS Gauge</div>
+          <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">ATS Gauge</div>
           <div className="mt-4 flex justify-center">
             <ScoreGauge score={review.fitScore} />
           </div>
@@ -176,7 +176,7 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
           <div className="flex items-center gap-4">
             <HonestFriendAvatar />
             <div>
-              <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">Honest Friend</div>
+              <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Honest Friend</div>
               <h1 className="mt-1 text-4xl font-bold tracking-[-0.06em] text-white">Here&apos;s where you stand</h1>
             </div>
           </div>
@@ -187,33 +187,33 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
             animate="show"
             className="mt-6 grid gap-4"
           >
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-emerald-400/12 bg-emerald-400/8 p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-emerald-200">
+            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#111827]">
                 <CheckCircle2 className="h-4 w-4" />
                 Pros
               </div>
-              <ul className="mt-3 space-y-2 text-sm leading-7 text-white/72">
+              <ul className="mt-3 space-y-2 text-sm leading-7 text-[#334155]">
                 {(review.strengths || []).map((item, index) => (
                   <li key={`strength-${index}`}>{item}</li>
                 ))}
               </ul>
             </motion.div>
 
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-amber-400/12 bg-amber-400/8 p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-amber-200">
+            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#111827]">
                 <CircleAlert className="h-4 w-4" />
                 Cons
               </div>
-              <ul className="mt-3 space-y-2 text-sm leading-7 text-white/72">
+              <ul className="mt-3 space-y-2 text-sm leading-7 text-[#334155]">
                 {(review.weaknesses || []).map((item, index) => (
                   <li key={`missing-${index}`}>{item}</li>
                 ))}
               </ul>
             </motion.div>
 
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-white/8 bg-[#071018] p-5">
-              <div className="text-sm font-semibold text-violet-200">Harsh Truth</div>
-              <p className="mt-3 text-base leading-8 text-white/84">{honestAssessment}</p>
+            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
+              <div className="text-sm font-semibold text-[#111827]">Harsh Truth</div>
+              <p className="mt-3 text-base leading-8 text-[#111827]">{honestAssessment}</p>
             </motion.div>
           </motion.div>
         </div>
@@ -228,7 +228,7 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
       <section className="mt-6 liquid-panel rounded-[2rem] p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-violet-200">
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">
               <MessageSquareQuote className="h-4 w-4" />
               Journalistic Verification Agent
             </div>
@@ -255,7 +255,7 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
                   <div className="flex-1">
                     <div className="text-sm leading-7 text-white/86">{log.question}</div>
                     {log.verified ? (
-                      <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-400/10 px-3 py-2 text-xs text-emerald-200">
+                      <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#d4a85c]/12 px-3 py-2 text-xs text-[#efcf94]">
                         <CheckCircle2 className="h-4 w-4" />
                         Verified fact saved
                       </div>

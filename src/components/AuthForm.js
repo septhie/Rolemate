@@ -11,7 +11,7 @@ export default function AuthForm({ mode }) {
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
       <div className="liquid-panel rounded-[2rem] p-8">
-        <div className="text-[11px] uppercase tracking-[0.24em] text-violet-200">{mode === "login" ? "Welcome back" : "Free account"}</div>
+        <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">{mode === "login" ? "Welcome back" : "Free account"}</div>
         <h1 className="mt-2 text-4xl font-bold tracking-[-0.05em] text-ink">{mode === "login" ? "Continue with Google" : "Create your account with Google"}</h1>
         <p className="mt-4 text-sm leading-7 text-slate">
           One-tap access with Google. No paywall, no ads, no hidden billing.

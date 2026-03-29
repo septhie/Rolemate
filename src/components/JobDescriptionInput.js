@@ -11,7 +11,7 @@ export default function JobDescriptionInput({
   return (
     <div className="liquid-panel rounded-[2rem] p-6">
       <div className="mb-4">
-        <div className="text-[11px] uppercase tracking-[0.24em] text-cyan-300">Role Context</div>
+        <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Role Context</div>
         <h2 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-ink">Paste the job description</h2>
       </div>
 

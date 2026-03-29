@@ -11,7 +11,7 @@ export default function RolemateLogo({ size = 44, withWordmark = true, className
         }`}
         style={{ width: size, height: size }}
       >
-        <div className="absolute inset-2 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.32),transparent_70%)] blur-md" />
+        <div className="absolute inset-2 rounded-full bg-[radial-gradient(circle,rgba(212,168,92,0.34),transparent_70%)] blur-md" />
         <svg width={size * 0.64} height={size * 0.64} viewBox="0 0 64 64" fill="none" aria-hidden="true">
           <path
             d="M14 54V10h18.5c10.4 0 17.5 6.7 17.5 16.3 0 7.1-3.6 11.9-9.9 14.2L52 54H36.6L27.4 42.2H26V54H14Z"
@@ -28,11 +28,11 @@ export default function RolemateLogo({ size = 44, withWordmark = true, className
           <defs>
             <linearGradient id="glassA" x1="16" y1="10" x2="50" y2="54" gradientUnits="userSpaceOnUse">
               <stop stopColor="#ffffff" stopOpacity="0.95" />
-              <stop offset="1" stopColor="#818cf8" stopOpacity="0.55" />
+              <stop offset="1" stopColor="#d4a85c" stopOpacity="0.55" />
             </linearGradient>
             <linearGradient id="glassB" x1="28" y1="19" x2="42" y2="35" gradientUnits="userSpaceOnUse">
               <stop stopColor="#ffffff" stopOpacity="0.95" />
-              <stop offset="1" stopColor="#a5b4fc" stopOpacity="0.4" />
+              <stop offset="1" stopColor="#c7902f" stopOpacity="0.4" />
             </linearGradient>
           </defs>
         </svg>

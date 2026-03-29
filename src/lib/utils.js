@@ -33,15 +33,15 @@ function getScoreTheme(score) {
   if (score <= 85) {
     return {
       label: "Strong match - let's sharpen it",
-      badge: "bg-emerald-400/10 text-emerald-200 border-emerald-400/20",
-      ring: "from-emerald-400 to-teal-500"
+      badge: "bg-[#d4a85c]/10 text-[#efcf94] border-[#d4a85c]/20",
+      ring: "from-[#efcf94] to-[#d4a85c]"
     };
   }
 
   return {
     label: "Excellent fit - just polish it",
-    badge: "bg-sky-400/10 text-sky-200 border-sky-400/20",
-    ring: "from-sky-400 to-blue-500"
+    badge: "bg-[#d4a85c]/10 text-[#efcf94] border-[#d4a85c]/20",
+    ring: "from-[#efcf94] to-[#c7902f]"
   };
 }
 

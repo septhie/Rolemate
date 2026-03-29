@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-import { Upload, FileText, ArrowRight, Sparkles, Coffee } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Coffee, FileText, Sparkles, Upload } from "lucide-react";
 import { saveTransientReview } from "@/lib/transientReview";
 import { registerCompletedFreeReview, shouldGateNextReview, unlockFullAccess } from "@/lib/freeCredits";
-import JobDescriptionInput from "@/components/JobDescriptionInput";
-import MockUnlockOverlay from "@/components/MockUnlockOverlay";
 import HonestFriendAvatar from "@/components/HonestFriendAvatar";
 import RolemateLogo from "@/components/RolemateLogo";
+import ScoreGauge from "@/components/ScoreGauge";
 
 const progressSteps = [
   "Scanning for BS...",
@@ -18,36 +16,127 @@ const progressSteps = [
   "Preparing the harsh truth..."
 ];
 
-const container = {
-  hidden: { opacity: 0, y: 28 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.65,
-      ease: [0.22, 1, 0.36, 1],
-      staggerChildren: 0.08
-    }
+const floatingChips = [
+  { label: "ATS Scan", className: "left-[56%] top-[18%]" },
+  { label: "Tone Check", className: "right-[20%] top-[12%]" },
+  { label: "Red Flags", className: "right-[8%] top-[34%]" }
+];
+
+function DrawerResult({ review }) {
+  if (!review) {
+    return null;
   }
-};
+
+  return (
+    <div className="flex h-full flex-col overflow-y-auto px-7 py-8">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.26em] text-[#efcf94]">Honest Friend</div>
+          <h2 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-white">The truth about your fit</h2>
+        </div>
+        <div className="shrink-0">
+          <ScoreGauge score={review.fitScore} />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-4">
+        <div className="rounded-[28px] border border-[#d4a85c]/14 bg-[#f5f5f5] p-5 text-[#111827]">
+          <div className="text-[11px] uppercase tracking-[0.24em] text-[#8b6a31]">Harsh Truth</div>
+          <p className="mt-3 text-base leading-8">
+            {review.redFlags?.honestAssessment || "Rolemate found both real strengths and real gaps in your fit."}
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-[24px] border border-white/8 bg-white/[0.04] p-5">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">What&apos;s Working</div>
+            <ul className="mt-3 space-y-2 text-sm leading-7 text-white/78">
+              {(review.strengths || []).slice(0, 4).map((item, index) => (
+                <li key={`strength-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-[24px] border border-white/8 bg-white/[0.04] p-5">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">What&apos;s Missing</div>
+            <ul className="mt-3 space-y-2 text-sm leading-7 text-white/78">
+              {(review.weaknesses || []).slice(0, 4).map((item, index) => (
+                <li key={`weakness-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-5">
+          <div className="text-[11px] uppercase tracking-[0.24em] text-white/38">Mismatch Matrix</div>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="rounded-[20px] border border-white/8 bg-white/[0.04] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/34">Direct</div>
+              <div className="mt-2 text-3xl font-semibold text-white">{review.mismatchMatrix.directMatches.length}</div>
+            </div>
+            <div className="rounded-[20px] border border-white/8 bg-white/[0.04] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/34">Soft Gaps</div>
+              <div className="mt-2 text-3xl font-semibold text-white">{review.mismatchMatrix.softGaps.length}</div>
+            </div>
+            <div className="rounded-[20px] border border-white/8 bg-white/[0.04] p-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-white/34">Hard Gaps</div>
+              <div className="mt-2 text-3xl font-semibold text-white">{review.mismatchMatrix.hardGaps.length}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-auto flex flex-wrap gap-3 pt-2">
+          <Link href={`/app/results/${review.id}`} className="rounded-full border border-white/10 bg-white px-5 py-3 text-sm font-semibold text-black">
+            Open Full Report
+          </Link>
+          <Link href={`/app/preview/${review.id}`} className="rounded-full border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-white">
+            Rewrite Resume
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MemberEntryInvite({ isProcessing, isUnlocked, onContinue }) {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center px-6">
+      <div className="absolute inset-0 rounded-[34px] bg-[#0d1117]/50 backdrop-blur-xl" />
+      <div className="liquid-panel relative z-10 w-full max-w-xl rounded-[30px] p-8">
+        <div className="text-[11px] uppercase tracking-[0.26em] text-[#efcf94]">Member Entry</div>
+        <h3 className="mt-3 text-3xl font-bold tracking-[-0.05em] text-white">You&apos;re on a roll.</h3>
+        <p className="mt-4 text-base leading-8 text-white/70">
+          Sign in with Google to save your history, track your ATS score over time, and keep your Honest Friend in your corner.
+        </p>
+        <button
+          type="button"
+          onClick={onContinue}
+          disabled={isProcessing || isUnlocked}
+          className="mt-6 inline-flex w-full items-center justify-center rounded-full border border-white/12 bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:opacity-70"
+        >
+          {isProcessing ? "Processing..." : isUnlocked ? "Success!" : "Continue with Google"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ToolPageClient() {
-  const router = useRouter();
   const [resumeFile, setResumeFile] = useState(null);
   const [manualResumeText, setManualResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
-  const [progressIndex, setProgressIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [paywallOpen, setPaywallOpen] = useState(false);
-  const [isUnlockProcessing, setIsUnlockProcessing] = useState(false);
-  const [unlockSuccess, setUnlockSuccess] = useState(false);
-  const [toastOpen, setToastOpen] = useState(false);
   const [liveFeedback, setLiveFeedback] = useState("");
   const [statusMessage, setStatusMessage] = useState(progressSteps[0]);
-  const [isTimeoutError, setIsTimeoutError] = useState(false);
+  const [currentReview, setCurrentReview] = useState(null);
+  const [drawerState, setDrawerState] = useState("closed");
+  const [drawerInvite, setDrawerInvite] = useState(false);
+  const [unlockSuccess, setUnlockSuccess] = useState(false);
+  const [isUnlockProcessing, setIsUnlockProcessing] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
 
   const canSubmit = useMemo(() => {
     const hasResume = Boolean(resumeFile) || manualResumeText.trim().length > 0;
@@ -60,10 +149,9 @@ export default function ToolPageClient() {
     }
 
     const timer = window.setInterval(() => {
-      setProgressIndex((current) => {
-        const next = (current + 1) % progressSteps.length;
-        setStatusMessage(progressSteps[next]);
-        return next;
+      setStatusMessage((current) => {
+        const currentIndex = progressSteps.indexOf(current);
+        return progressSteps[(currentIndex + 1) % progressSteps.length];
       });
     }, 2200);
 
@@ -105,17 +193,11 @@ export default function ToolPageClient() {
 
         if (eventName === "status") {
           setStatusMessage(payload.message);
-        }
-
-        if (eventName === "feedback") {
+        } else if (eventName === "feedback") {
           setLiveFeedback((current) => `${current}${payload.chunk}`);
-        }
-
-        if (eventName === "result") {
+        } else if (eventName === "result") {
           finalReview = payload.review;
-        }
-
-        if (eventName === "error") {
+        } else if (eventName === "error") {
           streamError = payload.message;
         }
       }
@@ -134,10 +216,12 @@ export default function ToolPageClient() {
 
   async function runSubmission() {
     setError("");
-    setIsTimeoutError(false);
     setLiveFeedback("");
     setStatusMessage(progressSteps[0]);
-    setProgressIndex(0);
+    setIsSubmitting(true);
+    setDrawerState("loading");
+    setDrawerInvite(false);
+
     const formData = new FormData();
     if (resumeFile) {
       formData.append("resumePdf", resumeFile);
@@ -146,8 +230,6 @@ export default function ToolPageClient() {
     formData.append("jobDescription", jobDescription);
     formData.append("jobTitle", jobTitle);
     formData.append("companyName", companyName);
-
-    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/analyze", {
@@ -161,18 +243,16 @@ export default function ToolPageClient() {
       }
 
       const review = await readAnalyzeStream(response);
-
       if (review?.transient) {
         saveTransientReview(review);
       }
 
       registerCompletedFreeReview();
-      router.push(`/app/results/${review.id}`);
+      setCurrentReview(review);
+      setDrawerState("result");
     } catch (requestError) {
-      const message = requestError.message || "Something went wrong while analyzing your resume.";
-      const timedOut = /coffee break|too long|timed out|5 seconds/i.test(message);
-      setIsTimeoutError(timedOut);
-      setError(message);
+      setError(requestError.message || "Something went wrong while analyzing your resume.");
+      setDrawerState("loading");
     } finally {
       setIsSubmitting(false);
     }
@@ -185,188 +265,213 @@ export default function ToolPageClient() {
     }
 
     if (shouldGateNextReview()) {
-      setPaywallOpen(true);
+      setDrawerState("result");
+      setDrawerInvite(true);
       return;
     }
 
     await runSubmission();
   }
 
-  async function handleMockUnlock() {
+  async function handleMemberEntry() {
     setIsUnlockProcessing(true);
-    setUnlockSuccess(false);
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    await new Promise((resolve) => setTimeout(resolve, 1200));
     unlockFullAccess();
     setUnlockSuccess(true);
     setToastOpen(true);
-    await new Promise((resolve) => setTimeout(resolve, 650));
-    setPaywallOpen(false);
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    setDrawerInvite(false);
     setIsUnlockProcessing(false);
+    window.setTimeout(() => setToastOpen(false), 2200);
     await runSubmission();
-    window.setTimeout(() => setToastOpen(false), 2400);
   }
+
+  const workspaceShifted = drawerState !== "closed";
 
   return (
     <>
-      <MockUnlockOverlay
-        open={paywallOpen}
-        isProcessing={isUnlockProcessing}
-        isUnlocked={unlockSuccess}
-        onContinue={handleMockUnlock}
-      />
-
       <AnimatePresence>
         {toastOpen ? (
           <motion.div
-            initial={{ opacity: 0, y: -16 }}
+            initial={{ opacity: 0, y: -14 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="fixed right-4 top-28 z-[80] rounded-2xl border border-[#d4a85c]/25 bg-[#d4a85c]/12 px-4 py-3 text-sm text-[#efcf94] backdrop-blur-2xl"
+            className="fixed right-10 top-10 z-50 rounded-2xl border border-[#d4a85c]/25 bg-[#d4a85c]/12 px-4 py-3 text-sm text-[#efcf94] backdrop-blur-xl"
           >
             Success! Your progress is ready to save.
           </motion.div>
         ) : null}
       </AnimatePresence>
 
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="mb-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
-        >
-          <motion.div variants={container} className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d4a85c]/15 bg-[#d4a85c]/6 px-4 py-2 text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Honest-first analysis
-            </div>
-            <h1 className="font-display mt-4 max-w-3xl text-5xl tracking-[-0.06em] text-ink sm:text-6xl">
-              Your career deserves the truth.
+      <main className="relative min-h-screen overflow-hidden pr-5">
+        <div className="relative h-screen">
+          <motion.div
+            animate={{
+              x: workspaceShifted ? -120 : 0,
+              y: workspaceShifted ? -12 : 0,
+              scale: workspaceShifted ? 0.62 : 1
+            }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-none absolute bottom-10 left-6 z-10 max-w-[560px] lg:left-10"
+          >
+            <div className="text-[11px] uppercase tracking-[0.28em] text-[#efcf94]">Studio Canvas</div>
+            <h1 className="font-display mt-4 text-6xl leading-[0.92] tracking-[-0.06em] text-white sm:text-7xl lg:text-[6.6rem]">
+              The Truth About Your Career.
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-slate">
-              Three free guest reviews, no login, no awkward funnel. Just your resume, the role, and the kind of honest feedback a smart classmate would give you.
+            <p className="mt-5 max-w-md text-base leading-8 text-white/58">
+              Bring the resume. Bring the role. Rolemate handles the blunt feedback, the real gaps, and the stronger case for what you actually deserve.
             </p>
           </motion.div>
 
-          <motion.div variants={container} className="liquid-panel rounded-[2rem] p-6">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Review promise</div>
-            <div className="mt-4 text-lg leading-8 text-white/82">
-              No invented jobs. No invented tools. No fake leadership. Only verified facts, stronger framing, and a clearer shot at the role.
-            </div>
-          </motion.div>
-        </motion.div>
-
-        <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
-          <div className="liquid-panel rounded-[2rem] p-6">
-            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Resume Intake</div>
-            <h2 className="mt-2 text-3xl font-bold tracking-[-0.05em] text-ink">Upload a PDF resume</h2>
-
-            <label className="relative mt-6 flex min-h-[220px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-[1.75rem] border border-dashed border-white/14 bg-white/[0.03] p-8 text-center transition hover:border-white/22 hover:bg-white/[0.05]">
-              <div className="absolute inset-y-0 right-4 hidden items-center opacity-[0.08] transition hover:opacity-[0.14] md:flex">
-                <RolemateLogo size={180} withWordmark={false} watermark />
-              </div>
-              <Upload className="h-10 w-10 text-[#efcf94]" />
-              <div className="mt-4 text-lg text-ink">{resumeFile ? resumeFile.name : "Drag in a PDF or click to browse"}</div>
-              <div className="mt-2 text-sm text-slate">PDF only, max 5MB</div>
-              <input
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={(event) => setResumeFile(event.target.files?.[0] || null)}
-              />
-            </label>
-
-            <div className="mt-6 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-ink">
-                <FileText className="h-4 w-4 text-[#efcf94]" />
-                Manual text fallback
-              </div>
-              <textarea
-                value={manualResumeText}
-                onChange={(event) => setManualResumeText(event.target.value)}
-                className="field-shell mt-3 min-h-[180px] w-full px-4 py-4 text-sm leading-7 outline-none transition"
-                placeholder="If your PDF is image-based or unreadable, paste your resume here."
-              />
-            </div>
-
-            {resumeFile?.size > 5 * 1024 * 1024 ? (
-              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">
-                Your PDF is over the 5MB limit. Please upload a smaller file.
-              </div>
-            ) : null}
+          <div className="absolute inset-0">
+            {floatingChips.map((chip) => (
+              <motion.div
+                key={chip.label}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className={`absolute ${chip.className} rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] uppercase tracking-[0.22em] text-white/66 shadow-[0_18px_50px_rgba(0,0,0,0.18)]`}
+              >
+                {chip.label}
+              </motion.div>
+            ))}
           </div>
 
-          <JobDescriptionInput
-            jobDescription={jobDescription}
-            setJobDescription={setJobDescription}
-            jobTitle={jobTitle}
-            setJobTitle={setJobTitle}
-            companyName={companyName}
-            setCompanyName={setCompanyName}
-          />
-
-          <div className="liquid-panel rounded-[2rem] p-6 lg:col-span-2">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="text-sm text-slate">Honest-first analysis only</div>
-                <div className="mt-1 text-lg text-ink">
-                  Rolemate will never invent skills, jobs, degrees, or certifications.
+          <motion.form
+            onSubmit={handleSubmit}
+            animate={{
+              x: workspaceShifted ? -90 : 0,
+              scale: workspaceShifted ? 0.92 : 1
+            }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-[10%] top-1/2 z-10 w-[min(42vw,640px)] -translate-y-1/2"
+          >
+            <div className="liquid-panel rounded-[42%_58%_46%_54%/20%_28%_72%_80%] px-10 py-12">
+              <div className="flex items-start justify-between gap-6">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Engine</div>
+                  <h2 className="mt-3 text-3xl font-bold tracking-[-0.05em] text-white">Resume upload studio</h2>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate">
-                  <Link href="/" className="transition hover:text-white">
-                    Home
-                  </Link>
-                  <Link href="/dashboard" className="transition hover:text-white">
-                    Dashboard
-                  </Link>
-                  <Link href="/login" className="transition hover:text-white">
-                    Login
-                  </Link>
+                <div className="opacity-[0.08]">
+                  <RolemateLogo size={120} withWordmark={false} watermark />
                 </div>
               </div>
-              <button
-                type="submit"
-                disabled={!canSubmit || isSubmitting || resumeFile?.size > 5 * 1024 * 1024}
-                className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-full border border-white/12 bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/55"
-              >
-                {isSubmitting ? statusMessage : "Analyze honestly"}
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
 
-            {isSubmitting ? (
-              <div className="mt-5 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
-                <div className="flex items-center gap-3">
-                  <HonestFriendAvatar />
-                  <div>
-                    <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Honest Friend live feed</div>
-                    <div className="mt-1 text-sm text-white/68">{statusMessage}</div>
+              <label className="mt-8 flex min-h-[180px] cursor-pointer flex-col items-center justify-center rounded-[32px] border border-dashed border-white/14 bg-white/[0.03] text-center transition hover:border-white/24">
+                <Upload className="h-10 w-10 text-[#efcf94]" />
+                <div className="mt-4 text-lg text-white">{resumeFile ? resumeFile.name : "Drop a PDF or click to upload"}</div>
+                <div className="mt-2 text-sm text-white/48">PDF only. Max 5MB.</div>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(event) => setResumeFile(event.target.files?.[0] || null)}
+                />
+              </label>
+
+              <div className="mt-5 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <input
+                    value={jobTitle}
+                    onChange={(event) => setJobTitle(event.target.value)}
+                    className="field-shell px-4 py-3 outline-none"
+                    placeholder="Job Title"
+                  />
+                  <input
+                    value={companyName}
+                    onChange={(event) => setCompanyName(event.target.value)}
+                    className="field-shell px-4 py-3 outline-none"
+                    placeholder="Company"
+                  />
+                </div>
+
+                <textarea
+                  value={jobDescription}
+                  onChange={(event) => setJobDescription(event.target.value)}
+                  className="field-shell min-h-[180px] w-full px-4 py-4 text-sm leading-7 outline-none"
+                  placeholder="Paste the full job description here."
+                />
+
+                <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-white">
+                    <FileText className="h-4 w-4 text-[#efcf94]" />
+                    Manual fallback
                   </div>
+                  <textarea
+                    value={manualResumeText}
+                    onChange={(event) => setManualResumeText(event.target.value)}
+                    className="field-shell mt-3 min-h-[120px] w-full px-4 py-4 text-sm leading-7 outline-none"
+                    placeholder="If extraction struggles, paste your resume text here."
+                  />
                 </div>
-                <p className="mt-4 min-h-[96px] max-w-3xl text-sm leading-8 text-white/78">
-                  {liveFeedback || "Rolemate is reading the room before it says the quiet part out loud."}
-                </p>
               </div>
-            ) : null}
+
+              <div className="mt-6 flex items-center justify-between gap-4">
+                <div className="text-sm text-white/48">3 free reviews before member entry.</div>
+                <button
+                  type="submit"
+                  disabled={!canSubmit || isSubmitting || resumeFile?.size > 5 * 1024 * 1024}
+                  className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white px-5 py-3 text-sm font-semibold text-black transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:bg-white/20 disabled:text-white/45"
+                >
+                  {isSubmitting ? statusMessage : "Start analysis"}
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
 
             {error ? (
-              isTimeoutError ? (
-                <div className="mt-4 rounded-[1.5rem] border border-amber-400/18 bg-amber-400/10 p-5 text-amber-100">
-                  <div className="flex items-center gap-3">
-                    <Coffee className="h-5 w-5 text-amber-300" />
-                    <div className="text-sm font-semibold uppercase tracking-[0.18em]">Honest Friend</div>
-                  </div>
-                  <div className="mt-3 text-base leading-8">{error}</div>
+              <div className="mt-4 rounded-[24px] border border-[#d4a85c]/18 bg-[#d4a85c]/10 p-4 text-sm text-[#efcf94]">
+                <div className="flex items-center gap-2">
+                  <Coffee className="h-4 w-4" />
+                  {error}
                 </div>
-              ) : (
-                <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 px-4 py-3 text-sm text-red-200">{error}</div>
-              )
+              </div>
             ) : null}
-          </div>
-        </form>
+          </motion.form>
+
+          <AnimatePresence>
+            {drawerState !== "closed" ? (
+              <motion.aside
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute bottom-5 right-5 top-5 z-20 w-[min(50vw,760px)] rounded-[34px] border border-white/8 bg-[#0d1117]/72 backdrop-blur-2xl"
+              >
+                {drawerInvite ? <div className="absolute inset-0 rounded-[34px] bg-[#0d1117]/45 backdrop-blur-md" /> : null}
+
+                {drawerState === "loading" ? (
+                  <div className="flex h-full flex-col px-7 py-8">
+                    <div className="flex items-center gap-3">
+                      <HonestFriendAvatar />
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.26em] text-[#efcf94]">Honest Friend live feed</div>
+                        <div className="mt-1 text-sm text-white/58">{statusMessage}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 rounded-[28px] border border-white/8 bg-white/[0.03] p-6">
+                      <p className="min-h-[240px] text-base leading-9 text-white/80">
+                        {liveFeedback || "Rolemate is reading the room before it says the quiet part out loud."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {drawerState === "result" ? <DrawerResult review={currentReview} /> : null}
+
+                {drawerInvite ? (
+                  <MemberEntryInvite
+                    isProcessing={isUnlockProcessing}
+                    isUnlocked={unlockSuccess}
+                    onContinue={handleMemberEntry}
+                  />
+                ) : null}
+              </motion.aside>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </main>
     </>
   );
 }
-
-

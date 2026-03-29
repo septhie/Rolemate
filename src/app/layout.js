@@ -1,6 +1,5 @@
 import "./globals.css";
 import { Inter, Playfair_Display } from "next/font/google";
-import FreeCreditsBar from "@/components/FreeCreditsBar";
 import SiteHeader from "@/components/SiteHeader";
 
 const inter = Inter({
@@ -23,10 +22,10 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.variable} ${playfair.variable} font-sans`}>
         <div className="app-shell">
+          <div className="pointer-events-none fixed inset-5 z-20 rounded-[28px] border-2 border-[#d4a85c]/20 shadow-[0_0_40px_rgba(212,168,92,0.12)]" />
           <div className="fine-grid" />
-          <FreeCreditsBar />
           <SiteHeader />
-          {children}
+          <div className="min-h-screen pl-[92px]">{children}</div>
         </div>
       </body>
     </html>

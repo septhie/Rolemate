@@ -65,7 +65,7 @@ textarea {
 .orb {
   pointer-events: none;
   position: fixed;
-  z-index: -3;
+  z-index: -2;
   width: 38vw;
   height: 38vw;
   min-width: 320px;
@@ -90,7 +90,7 @@ textarea {
 .noise-overlay {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: -3;
   pointer-events: none;
   opacity: 0.08;
   mix-blend-mode: soft-light;
@@ -170,6 +170,31 @@ textarea {
 
 .status-glow {
   box-shadow: 0 0 20px rgba(255, 184, 0, 0.22);
+}
+
+.studio-stage {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.studio-right-column {
+  min-width: 0;
+}
+
+.honesty-column {
+  width: min(95%, 900px);
+}
+
+@media (min-width: 1024px) {
+  .studio-stage {
+    grid-template-columns: 45% 55%;
+  }
+}
+
+@media (min-width: 1440px) {
+  .studio-stage {
+    grid-template-columns: 40% 60%;
+  }
 }
 
 @keyframes grain-drift {

@@ -76,7 +76,7 @@ export default function SiteHeader() {
         </div>
       </aside>
 
-      <div className="fixed bottom-0 left-20 right-0 z-40 flex h-[5.5vh] min-h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-[3vw] text-[0.68rem] uppercase tracking-[0.24em] text-white/42 backdrop-blur-3xl">
+      <div className="fixed bottom-0 left-20 right-0 z-40 flex h-[5.5vh] min-h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-[3vw] text-[0.68rem] uppercase tracking-[0.24em] text-white/42 backdrop-blur-[20px]">
         <div className="flex items-center gap-[1.2vw]">
           <span className="h-2 w-2 rounded-full bg-[#ffb800] shadow-[0_0_16px_rgba(255,184,0,0.35)]" />
           <span>Student-to-student honest analysis</span>

@@ -45,7 +45,7 @@ function OrganicUploadPanel({
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className="relative"
     >
-      <div className="glass-panel relative overflow-hidden rounded-[2.8rem] px-[3.2vw] py-[4vh]">
+      <div className="glass-panel relative overflow-hidden rounded-[2.8rem] p-[clamp(1rem,3vw,3rem)]">
         <div className="pointer-events-none absolute -right-[5vw] top-[2vh] opacity-[0.06]">
           <RolemateLogo size={140} withWordmark={false} watermark />
         </div>
@@ -58,7 +58,7 @@ function OrganicUploadPanel({
 
           <label className="mt-[3vh] flex aspect-video cursor-pointer flex-col items-center justify-center rounded-[2rem] border border-dashed border-white/12 bg-white/[0.03] text-center transition hover:border-white/22">
             <Upload className="h-10 w-10 text-[#ffcf57]" />
-            <div className="mt-4 text-[1.08rem] text-white">{resumeFile ? resumeFile.name : "Drop a PDF or tap to upload"}</div>
+            <div className="mt-4 text-[clamp(1rem,1.4vw,1.15rem)] text-white">{resumeFile ? resumeFile.name : "Drop a PDF or tap to upload"}</div>
             <div className="mt-2 text-[0.78rem] uppercase tracking-[0.22em] text-white/36">PDF only | 5MB max</div>
             <input
               type="file"
@@ -131,7 +131,7 @@ function LoadingCards({ statusMessage, liveFeedback }) {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="relative flex flex-col gap-4 2xl:min-h-[56vh] 2xl:block"
     >
-      <motion.div className="glass-panel-strong relative w-full rounded-[2.3rem] p-[2.4rem] 2xl:absolute 2xl:right-0 2xl:top-0 2xl:w-[88%]">
+      <motion.div className="glass-panel-strong honesty-column relative w-full rounded-[2.3rem] p-[clamp(1rem,3vw,3rem)] 2xl:absolute 2xl:right-0 2xl:top-0">
         <div className="flex items-center gap-4">
           <HonestFriendAvatar />
           <div>
@@ -148,7 +148,7 @@ function LoadingCards({ statusMessage, liveFeedback }) {
         initial={{ opacity: 0, x: 40 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.08, duration: 0.5 }}
-        className="glass-panel relative w-full rounded-[2rem] p-5 2xl:absolute 2xl:bottom-[10%] 2xl:left-[6%] 2xl:w-[52%]"
+        className="glass-panel relative w-full rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:bottom-[10%] 2xl:left-[6%] 2xl:w-[52%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Live filter</div>
         <div className="analysis-text mt-4 text-[0.82rem] leading-7 text-white/66">
@@ -176,7 +176,7 @@ function ResultCards({ review }) {
         initial={{ opacity: 0, x: 80 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.04, duration: 0.5 }}
-        className="glass-panel-strong relative z-20 w-full rounded-[2.4rem] p-[2.1rem] 2xl:absolute 2xl:right-0 2xl:top-0 2xl:w-[86%] 2xl:p-[2.6rem]"
+        className="glass-panel-strong honesty-column relative z-20 w-full rounded-[2.4rem] p-[clamp(1rem,3vw,3rem)] 2xl:absolute 2xl:right-0 2xl:top-0"
       >
         <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
           <div>
@@ -195,7 +195,7 @@ function ResultCards({ review }) {
         initial={{ opacity: 0, x: 60 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.12, duration: 0.5 }}
-        className="glass-panel relative z-10 w-full rounded-[2.1rem] p-6 2xl:absolute 2xl:left-[2%] 2xl:top-[34%] 2xl:w-[54%]"
+        className="glass-panel relative z-10 w-full rounded-[2.1rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:left-[2%] 2xl:top-[34%] 2xl:w-[54%]"
       >
         <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">What&apos;s Working</div>
         <ul className="analysis-text mt-4 space-y-3 text-[0.82rem] leading-7 text-white/76">
@@ -209,7 +209,7 @@ function ResultCards({ review }) {
         initial={{ opacity: 0, x: 70 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.18, duration: 0.5 }}
-        className="glass-panel relative z-30 w-full rounded-[2rem] p-6 2xl:absolute 2xl:bottom-0 2xl:right-[4%] 2xl:w-[62%]"
+        className="glass-panel relative z-30 w-full rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:bottom-0 2xl:right-[4%] 2xl:w-[62%]"
       >
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
@@ -482,7 +482,7 @@ export default function ToolPageClient() {
       </AnimatePresence>
 
       <main className="min-h-screen w-full">
-        <section className="grid min-h-screen w-full grid-cols-1 pb-[5.5vh] pl-20 lg:grid-cols-[minmax(24rem,38vw)_minmax(0,1fr)] xl:grid-cols-[minmax(28rem,40vw)_minmax(0,1fr)]">
+        <section className="studio-stage min-h-screen w-full pb-[5.5vh] pl-20">
           <div className="relative min-h-[44vh] border-b border-white/8 lg:min-h-screen lg:border-b-0">
             <div className="flex h-full min-h-[44vh] items-end px-[4vw] pb-[8vh] pt-[12vh] lg:sticky lg:top-0 lg:min-h-[calc(100vh-5.5vh)] xl:px-[5vw] xl:pb-[10vh]">
               <motion.div
@@ -492,7 +492,7 @@ export default function ToolPageClient() {
                 className="max-w-[32rem]"
               >
                 <div className="text-[0.72rem] uppercase tracking-[0.34em] text-[#ffcf57]">Rolemate Canvas</div>
-                <h1 className="font-display mt-[2.6vh] text-[clamp(3.2rem,5.6vw,6.8rem)] leading-[0.92] tracking-[-0.07em] text-[#f5f5f5]">
+                <h1 className="font-display mt-[2.6vh] text-[clamp(2.5rem,5vw,6rem)] leading-[1.1] tracking-[-0.07em] text-[#f5f5f5]">
                   The Truth About Your Career.
                 </h1>
                 <p className="analysis-text mt-[2.4vh] max-w-[24rem] text-[0.9rem] leading-8 text-white/56">
@@ -502,9 +502,9 @@ export default function ToolPageClient() {
             </div>
           </div>
 
-          <div className="relative min-h-[56vh] overflow-hidden">
+          <div className="studio-right-column relative min-h-[56vh]">
             <div className={`relative h-full min-h-[calc(100vh-5.5vh)] overflow-y-auto px-[3vw] py-[6vh] transition duration-300 ${rightColumnBlurred ? "blur-xl" : ""}`}>
-              <div className="relative flex w-full flex-col gap-[2.6vh]">
+              <div className="honesty-column relative flex w-full flex-col gap-[2.6vh]">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-[28vh]">
                   {floatingChips.map((chip, index) => (
                     <motion.div
@@ -537,8 +537,8 @@ export default function ToolPageClient() {
                     statusMessage={statusMessage}
                   />
 
-                  <div className="grid gap-[2vh] lg:grid-cols-[0.72fr_0.28fr]">
-                    <div className="glass-panel rounded-[2rem] p-6">
+                  <div className="grid gap-[2vh] xl:grid-cols-[0.72fr_0.28fr]">
+                    <div className="glass-panel rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)]">
                       <div className="flex items-center gap-3 text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">
                         <Sparkles className="h-4 w-4" />
                         What Rolemate checks
@@ -550,7 +550,7 @@ export default function ToolPageClient() {
                       </div>
                     </div>
 
-                    <div className="glass-panel rounded-[2rem] p-6">
+                    <div className="glass-panel rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)]">
                       <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Guest mode</div>
                       <div className="analysis-text mt-4 text-[0.82rem] leading-7 text-white/62">
                         Three full reviews free. The fourth asks you to save your progress.

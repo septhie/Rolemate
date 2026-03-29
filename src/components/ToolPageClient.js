@@ -170,13 +170,13 @@ function ResultCards({ review }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 60 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="relative flex flex-col gap-4 2xl:min-h-[70vh] 2xl:block"
+      className="relative flex flex-col gap-4"
     >
       <motion.article
         initial={{ opacity: 0, x: 80 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.04, duration: 0.5 }}
-        className="glass-panel-strong honesty-column relative z-20 w-full rounded-[2.4rem] p-[clamp(1rem,3vw,3rem)] 2xl:absolute 2xl:right-0 2xl:top-0"
+        className="glass-panel-strong honesty-column relative z-20 w-full rounded-[2.4rem] p-[clamp(1rem,3vw,3rem)]"
       >
         <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
           <div>
@@ -191,68 +191,70 @@ function ResultCards({ review }) {
         </div>
       </motion.article>
 
-      <motion.article
-        initial={{ opacity: 0, x: 60 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.12, duration: 0.5 }}
-        className="glass-panel relative z-10 w-full rounded-[2.1rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:left-[2%] 2xl:top-[34%] 2xl:w-[54%]"
-      >
-        <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">What&apos;s Working</div>
-        <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/76">
-          {(review.strengths || []).slice(0, 4).map((item, index) => (
-            <li key={`strength-${index}`}>{item}</li>
-          ))}
-        </ul>
-      </motion.article>
+      <div className="grid gap-4 2xl:grid-cols-[0.56fr_0.44fr]">
+        <motion.article
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.12, duration: 0.5 }}
+          className="glass-panel relative z-10 w-full rounded-[2.1rem] p-[clamp(1rem,2.4vw,2rem)]"
+        >
+          <div className="text-[0.66rem] uppercase tracking-[0.28em] text-[#ffcf57]">What&apos;s Working</div>
+          <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/76">
+            {(review.strengths || []).slice(0, 4).map((item, index) => (
+              <li key={`strength-${index}`}>{item}</li>
+            ))}
+          </ul>
+        </motion.article>
 
-      <motion.article
-        initial={{ opacity: 0, x: 70 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.18, duration: 0.5 }}
-        className="glass-panel relative z-30 w-full rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)] 2xl:absolute 2xl:bottom-0 2xl:right-[4%] 2xl:w-[62%]"
-      >
-        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Missing / Gaps</div>
-            <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/72">
-              {(review.weaknesses || []).slice(0, 4).map((item, index) => (
-                <li key={`weakness-${index}`}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
-                <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Direct</div>
-                <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.directMatches.length}</div>
+        <motion.article
+          initial={{ opacity: 0, x: 70 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.18, duration: 0.5 }}
+          className="glass-panel relative z-30 w-full rounded-[2rem] p-[clamp(1rem,2.4vw,2rem)]"
+        >
+          <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <div className="text-[0.66rem] uppercase tracking-[0.28em] text-white/34">Missing / Gaps</div>
+              <ul className="analysis-text analysis-body mt-4 space-y-3 text-white/72">
+                {(review.weaknesses || []).slice(0, 4).map((item, index) => (
+                  <li key={`weakness-${index}`}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
+                  <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Direct</div>
+                  <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.directMatches.length}</div>
+                </div>
+                <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
+                  <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Soft</div>
+                  <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.softGaps.length}</div>
+                </div>
+                <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
+                  <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Hard</div>
+                  <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.hardGaps.length}</div>
+                </div>
               </div>
-              <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
-                <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Soft</div>
-                <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.softGaps.length}</div>
-              </div>
-              <div className="rounded-[1.3rem] border border-white/10 bg-white/[0.04] px-3 py-4 text-center">
-                <div className="text-[0.62rem] uppercase tracking-[0.16em] text-white/34">Hard</div>
-                <div className="mt-2 text-2xl text-white">{review.mismatchMatrix.hardGaps.length}</div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href={`/app/results/${review.id}`}
+                  className="inline-flex rounded-full border border-white/10 bg-[#ffb800] px-4 py-3 text-[0.74rem] font-semibold uppercase tracking-[0.16em] text-black"
+                >
+                  Full report
+                </Link>
+                <Link
+                  href={`/app/preview/${review.id}`}
+                  className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-[0.74rem] font-semibold uppercase tracking-[0.16em] text-white"
+                >
+                  Rewrite
+                </Link>
               </div>
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href={`/app/results/${review.id}`}
-                className="inline-flex rounded-full border border-white/10 bg-[#ffb800] px-4 py-3 text-[0.74rem] font-semibold uppercase tracking-[0.16em] text-black"
-              >
-                Full report
-              </Link>
-              <Link
-                href={`/app/preview/${review.id}`}
-                className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-4 py-3 text-[0.74rem] font-semibold uppercase tracking-[0.16em] text-white"
-              >
-                Rewrite
-              </Link>
-            </div>
           </div>
-        </div>
-      </motion.article>
+        </motion.article>
+      </div>
     </motion.div>
   );
 }

@@ -19,6 +19,15 @@ const knownSkillTerms = [
   "valuation",
   "social media",
   "content calendars",
+  "tableau",
+  "splunk",
+  "wireshark",
+  "kali linux",
+  "security+",
+  "scheduling",
+  "inventory",
+  "ticket escalations",
+  "troubleshooting",
   "analytics",
   "brand marketing",
   "communication",
@@ -125,17 +134,17 @@ function parseInlineWork(text) {
       continue;
     }
 
-    if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald)/i.test(sentence)) {
-      continue;
-    }
+      if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald|shift lead|front desk|treasurer)/i.test(sentence)) {
+        continue;
+      }
 
     const normalizedSentence = sentence.replace(/^work experience:\s*/i, "").trim();
     const roleMatch =
       normalizedSentence.match(/(McDonald's\s+Crew\s+Member)/i) ||
-      normalizedSentence.match(
-        /\b([A-Z][A-Za-z&/'-]+(?:\s+[A-Z][A-Za-z&/'-]+){0,3}\s+(?:Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager|Cashier|Analyst))\b/i
-      ) ||
-      normalizedSentence.match(/\b(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)\b/i);
+        normalizedSentence.match(
+          /\b([A-Z][A-Za-z&/'-]+(?:\s+[A-Z][A-Za-z&/'-]+){0,3}\s+(?:Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager|Cashier|Analyst|Lead|Treasurer))\b/i
+        ) ||
+        normalizedSentence.match(/\b(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)\b/i);
 
     const durationMatch = sentence.match(/(\d+\s*(year|month)s?)/i);
     const companyMatch =
@@ -208,15 +217,21 @@ function parseInlineExtracurriculars(text) {
   const sentences = splitSentences(text);
 
   for (const sentence of sentences) {
-    if (!/(club|student organization|social media for|leadership|volunteer)/i.test(sentence)) {
-      continue;
-    }
+      if (!/(club|student organization|social media for|leadership|volunteer|president|treasurer|mentor|fundraiser)/i.test(sentence)) {
+        continue;
+      }
 
-    items.push({
-      name: /club/i.test(sentence) ? "Student club" : "Extracurricular involvement",
-      role: /social media/i.test(sentence) ? "Social media lead/support" : "",
-      bullets: [sentence]
-    });
+      items.push({
+        name: /club/i.test(sentence) ? "Student club" : "Extracurricular involvement",
+        role: /social media/i.test(sentence)
+          ? "Social media lead/support"
+          : /president/i.test(sentence)
+            ? "President"
+            : /treasurer/i.test(sentence)
+              ? "Treasurer"
+              : "",
+        bullets: [sentence]
+      });
   }
 
   return items;
@@ -226,6 +241,8 @@ function parseInlineCertifications(text) {
   const certs = [];
   const matches = text.match(/google analytics( certified| certification)?/gi) || [];
   matches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
+  const securityMatches = text.match(/security\+/gi) || [];
+  securityMatches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
   return Array.from(new Set(certs));
 }
 

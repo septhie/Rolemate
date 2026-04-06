@@ -5,10 +5,12 @@ const { condenseText } = require("../utils/promptCompression");
 const knownSkills = [
   "google analytics",
   "content calendars",
+  "content calendar",
   "cloud deployment",
   "project management",
   "budget management",
   "data analysis",
+  "analytical skills",
   "excel",
   "sql",
   "python",
@@ -28,16 +30,23 @@ const knownSkills = [
   "financial modeling",
   "valuation",
   "powerpoint",
+  "client presentations",
+  "market research",
+  "due diligence",
+  "teamwork",
   "debugging",
   "git",
   "apis",
+  "api",
   "testing",
   "analytics",
   "writing",
   "collaboration",
   "organization",
   "marketing",
-  "brand support"
+  "campaign",
+  "brand support",
+  "brand"
 ];
 
 function escapeRegex(value) {
@@ -108,7 +117,12 @@ function fallbackJobAnalysis(jobDescription, { jobTitle, companyName }) {
     }
   }
 
-  const fallbackRequired = requiredSkills.length ? requiredSkills : extractSkillsFromText(jobDescription).slice(0, 8);
+  const globalSkills = extractSkillsFromText(jobDescription);
+  const supplementedRequired =
+    requiredSkills.length >= 5
+      ? requiredSkills
+      : [...requiredSkills, ...globalSkills.filter((skill) => !preferredSkills.includes(skill))];
+  const fallbackRequired = supplementedRequired.length ? supplementedRequired : globalSkills.slice(0, 8);
   const titleKeywords = (jobTitle || "")
     .split(/\s+/)
     .map((item) => item.trim())

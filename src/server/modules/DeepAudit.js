@@ -231,7 +231,8 @@ function getTopEvidenceItems(sources) {
 
 function shortenResponsibility(text) {
   const clean = normalize(text).replace(/^responsibilities include\s*/i, "").replace(/^requirements:\s*/i, "");
-  return clean.replace(/[.]+$/, "").slice(0, 120);
+  const shortened = clean.replace(/[.]+$/, "").slice(0, 110).trim();
+  return shortened.length < clean.length ? `${shortened}...` : shortened;
 }
 
 function buildHonestAssessment({ fitScore, structuredResume, skillAudit, jobProfile }) {
@@ -273,6 +274,24 @@ function buildExperienceQuestions(structuredResume, jobProfile) {
     const responsibility = shortenResponsibility(responsibilities[index] || responsibilities[0] || "the kind of work this role will expect");
     return `You mentioned ${item.title}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
   });
+}
+
+function splitCompoundInternship(line) {
+  const clean = normalize(line);
+  if (!/internship experience:/i.test(clean) || !/\sand\s/i.test(clean)) {
+    return [];
+  }
+
+  const withoutPrefix = clean.replace(/^internship experience:\s*/i, "");
+  return withoutPrefix
+    .split(/\s+and\s+/i)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item) => /intern/i.test(item))
+    .map((item) => ({
+      original: item.endsWith(".") ? item : `${item}.`,
+      context: "Internship experience"
+    }));
 }
 
 function collectRewriteCandidates(structuredResume) {
@@ -321,6 +340,10 @@ function collectRewriteCandidates(structuredResume) {
     .filter((sentence) => !/^work experience:/i.test(sentence));
 
   summarySentences.forEach((sentence) => pushBullet("Summary", sentence));
+
+  summarySentences.forEach((sentence) => {
+    splitCompoundInternship(sentence).forEach((entry) => candidates.push(entry));
+  });
 
   return uniqueBy(candidates, (item) => `${item.context}:${item.original}`);
 }
@@ -374,6 +397,12 @@ function tightenRewrite(original, context) {
     rewrite = "Tracked engagement data and used it to understand what content was working";
   } else if (/^google analytics certified/i.test(rewrite)) {
     rewrite = "Earned Google Analytics certification to back up hands-on reporting and measurement work";
+  } else if (/^marketing intern at /i.test(rewrite)) {
+    rewrite = "Supported marketing execution in an internship setting with clearer room to name campaigns, reporting, or coordination work";
+  } else if (/^brand marketing intern at /i.test(rewrite)) {
+    rewrite = "Supported brand marketing work in an internship setting and should be tied to the campaigns or reporting you actually touched";
+  } else if (/^software engineering intern at /i.test(rewrite)) {
+    rewrite = "Completed a software engineering internship and should name the product features, tools, and debugging work you actually handled";
   } else if (/^mcdonald'?s crew member/i.test(rewrite)) {
     rewrite = "Handled fast-paced customer operations, cash transactions, and day-to-day service demands";
   } else if (/^worked the register/i.test(rewrite)) {
@@ -388,7 +417,13 @@ function tightenRewrite(original, context) {
     rewrite = `Showed ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
   }
 
-  if (cleanContext && cleanContext !== "Summary" && !normalizeLower(rewrite).includes(normalizeLower(contextRole))) {
+  if (
+    cleanContext &&
+    cleanContext !== "Summary" &&
+    cleanContext !== "Internship experience" &&
+    cleanContext.length < 80 &&
+    !normalizeLower(rewrite).includes(normalizeLower(contextRole))
+  ) {
     rewrite = `${rewrite} through ${cleanContext}`;
   }
 

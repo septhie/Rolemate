@@ -121,6 +121,10 @@ function parseInlineWork(text) {
       continue;
     }
 
+    if (/^personal projects include/i.test(sentence)) {
+      continue;
+    }
+
     if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald)/i.test(sentence)) {
       continue;
     }

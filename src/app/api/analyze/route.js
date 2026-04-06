@@ -8,11 +8,8 @@ const { validateJobDescription } = require("../../../server/modules/JobDescripti
 const { parseResume } = require("../../../server/modules/ResumeParser");
 const { analyzeJobDescription } = require("../../../server/modules/JobAnalyzer");
 const { buildMismatchMatrix } = require("../../../server/modules/MismatchMatrix");
-const { generateGapAnalysis } = require("../../../server/modules/GapAnalysis");
+const { generateDeepAudit } = require("../../../server/modules/DeepAudit");
 const { generateVerificationQuestions } = require("../../../server/modules/VerificationAgent");
-const { callOpenAITextStream } = require("../../../server/api/openai");
-const { buildStreamingFeedbackPrompt } = require("../../../server/prompts/streamingFeedbackPrompt");
-const { condenseText } = require("../../../server/utils/promptCompression");
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -46,7 +43,7 @@ function buildTransientReview({
   structuredResume,
   parsedJobProfile,
   mismatchMatrix,
-  gapAnalysis,
+  deepAudit,
   verificationQuestionResult,
   jobTitle,
   companyName,
@@ -60,14 +57,19 @@ function buildTransientReview({
     createdAt: new Date().toISOString(),
     fitScore: mismatchMatrix.fitScore,
     mismatchMatrix,
-    strengths: gapAnalysis.strengths,
-    weaknesses: gapAnalysis.missing,
+    strengths: deepAudit.strengths,
+    weaknesses: deepAudit.missing,
     missingKeywords: mismatchMatrix.hardGaps.map((item) => item.value),
     redFlags: {
       resumeWarnings: ingestion.warnings,
       parsedResumeFlags: structuredResume.flags,
       scannedLikely: ingestion.scannedLikely,
-      honestAssessment: gapAnalysis.honestAssessment
+      honestAssessment: deepAudit.honestAssessment
+    },
+    audit: {
+      skillAudit: deepAudit.skillAudit,
+      interviewQuestions: deepAudit.interviewQuestions,
+      bulletRewrites: deepAudit.bulletRewrites
     },
     summary: runSummary,
     transient: true,
@@ -112,6 +114,26 @@ function createStreamEvent(encoder, event, payload) {
   return encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function streamMarkdownSection(send, eventName, text) {
+  if (!text) {
+    return;
+  }
+
+  const chunks = String(text)
+    .split(/\n{2,}/)
+    .map((chunk) => chunk.trim())
+    .filter(Boolean);
+
+  for (const chunk of chunks) {
+    send(eventName, { chunk: `${chunk}\n\n` });
+    await sleep(40);
+  }
+}
+
 export async function POST(request) {
   const formData = await request.formData();
   const manualResumeText = formData.get("manualResumeText")?.toString() || "";
@@ -137,20 +159,9 @@ export async function POST(request) {
 
         devLog("resume-text-extraction", ingestion);
         send("status", { message: statusMessages[0] });
-
-        const streamFeedbackPromise = callOpenAITextStream({
-          taskName: "streaming-feedback",
-          runContext,
-          systemPrompt: buildStreamingFeedbackPrompt(),
-          userPrompt: [
-            `Job title: ${jobTitle || "Unknown"}`,
-            `Company: ${companyName || "Unknown"}`,
-            `Resume excerpt:\n${condenseText(ingestion.extractedText, 1800)}`,
-            `Job description excerpt:\n${condenseText(normalizedJobDescription, 2200)}`
-          ].join("\n\n"),
-          onChunk: (chunk) => send("feedback", { chunk }),
-          fallback: () =>
-            "I am mapping the strongest overlap first, then checking which requirements are real stretches and where your existing experience can still carry signal."
+        send("assessment", {
+          chunk:
+            "**Honest Assessment**\n- Reading the resume against the job requirements now.\n- I am looking for proof, not vibe.\n\n"
         });
 
         const [structuredResume, parsedJobProfile] = await Promise.all([
@@ -170,17 +181,18 @@ export async function POST(request) {
         devLog("mismatch-matrix", mismatchMatrix);
         devLog("fit-score", mismatchMatrix.breakdown);
 
-        const [gapAnalysis, verificationQuestionResult] = await Promise.all([
-          generateGapAnalysis({
-            structuredResume,
-            jobProfile: {
-              ...parsedJobProfile,
-              jobTitle,
-              companyName
-            },
-            mismatchMatrix,
-            runContext
-          }),
+        const [deepAudit, verificationQuestionResult] = await Promise.all([
+          Promise.resolve(
+            generateDeepAudit({
+              structuredResume,
+              jobProfile: {
+                ...parsedJobProfile,
+                jobTitle,
+                companyName
+              },
+              mismatchMatrix
+            })
+          ),
           generateVerificationQuestions({
             hardGaps: mismatchMatrix.hardGaps,
             structuredResume,
@@ -190,7 +202,9 @@ export async function POST(request) {
         ]);
 
         send("status", { message: statusMessages[2] });
-        await streamFeedbackPromise;
+        await streamMarkdownSection(send, "assessment", deepAudit.markdown.assessmentBody);
+        await streamMarkdownSection(send, "interview", deepAudit.markdown.interviewBody);
+        await streamMarkdownSection(send, "rewrites", deepAudit.markdown.rewriteBody);
 
         const runSummary = summarizeRun({
           resumeText: ingestion.extractedText,
@@ -205,7 +219,7 @@ export async function POST(request) {
           structuredResume,
           parsedJobProfile,
           mismatchMatrix,
-          gapAnalysis,
+          deepAudit,
           verificationQuestionResult,
           jobTitle,
           companyName,

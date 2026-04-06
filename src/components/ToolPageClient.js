@@ -122,7 +122,7 @@ function OrganicUploadPanel({
   );
 }
 
-function LoadingCards({ statusMessage, liveFeedback }) {
+function LoadingCards({ statusMessage, streamPanels }) {
   return (
     <motion.div
       initial={{ opacity: 0, x: 80 }}
@@ -139,8 +139,18 @@ function LoadingCards({ statusMessage, liveFeedback }) {
             <div className="mt-2 text-[0.82rem] uppercase tracking-[0.18em] text-white/42">{statusMessage}</div>
           </div>
         </div>
-        <div className="analysis-text analysis-body mt-[3.2vh] min-h-[26vh] text-[#f5f5f5]">
-          {liveFeedback || "Rolemate is reading the role, checking your claims, and deciding how blunt it needs to be."}
+        <div className="mt-[3vh] grid gap-4 xl:grid-cols-2">
+          {streamPanels.map((panel) => (
+            <div
+              key={panel.key}
+              className={`rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-4 ${panel.tall ? "xl:col-span-2" : ""}`}
+            >
+              <div className="text-[0.62rem] uppercase tracking-[0.24em] text-[#ffcf57]">{panel.label}</div>
+              <div className="analysis-text analysis-body mt-3 min-h-[10vh] whitespace-pre-wrap text-[#f5f5f5]">
+                {panel.content || panel.placeholder}
+              </div>
+            </div>
+          ))}
         </div>
       </motion.div>
 
@@ -316,7 +326,11 @@ export default function ToolPageClient() {
   const [companyName, setCompanyName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [liveFeedback, setLiveFeedback] = useState("");
+  const [liveAudit, setLiveAudit] = useState({
+    assessment: "",
+    interview: "",
+    rewrites: ""
+  });
   const [statusMessage, setStatusMessage] = useState(progressSteps[0]);
   const [currentReview, setCurrentReview] = useState(null);
   const [resultsState, setResultsState] = useState("idle");
@@ -329,6 +343,28 @@ export default function ToolPageClient() {
     const hasResume = Boolean(resumeFile) || manualResumeText.trim().length > 0;
     return hasResume && jobDescription.trim().length >= 100;
   }, [resumeFile, manualResumeText, jobDescription]);
+
+  const streamPanels = [
+    {
+      key: "assessment",
+      label: "Honest Assessment",
+      content: liveAudit.assessment,
+      placeholder: "I'm checking the resume against the job requirements and looking for proof, not posture.",
+      tall: true
+    },
+    {
+      key: "interview",
+      label: "Interview Prep",
+      content: liveAudit.interview,
+      placeholder: "Targeted interview questions will show up here next."
+    },
+    {
+      key: "rewrites",
+      label: "Bullet Rewrites",
+      content: liveAudit.rewrites,
+      placeholder: "Specific resume line rewrites will arrive after the assessment."
+    }
+  ];
 
   useEffect(() => {
     if (!isSubmitting) {
@@ -380,8 +416,11 @@ export default function ToolPageClient() {
 
         if (eventName === "status") {
           setStatusMessage(payload.message);
-        } else if (eventName === "feedback") {
-          setLiveFeedback((current) => `${current}${payload.chunk}`);
+        } else if (eventName === "assessment" || eventName === "interview" || eventName === "rewrites") {
+          setLiveAudit((current) => ({
+            ...current,
+            [eventName]: `${current[eventName] || ""}${payload.chunk}`
+          }));
         } else if (eventName === "result") {
           finalReview = payload.review;
         } else if (eventName === "error") {
@@ -403,7 +442,11 @@ export default function ToolPageClient() {
 
   async function runSubmission() {
     setError("");
-    setLiveFeedback("");
+    setLiveAudit({
+      assessment: "",
+      interview: "",
+      rewrites: ""
+    });
     setStatusMessage(progressSteps[0]);
     setIsSubmitting(true);
     setResultsState("loading");
@@ -569,12 +612,12 @@ export default function ToolPageClient() {
 
                 <ErrorCard error={error} />
 
-                <div className="relative min-h-[24vh]">
-                  <AnimatePresence mode="wait">
-                    {resultsState === "loading" ? <LoadingCards key="loading" statusMessage={statusMessage} liveFeedback={liveFeedback} /> : null}
-                    {resultsState === "result" ? <ResultCards key="result" review={currentReview} /> : null}
-                  </AnimatePresence>
-                </div>
+                  <div className="relative min-h-[24vh]">
+                    <AnimatePresence mode="wait">
+                      {resultsState === "loading" ? <LoadingCards key="loading" statusMessage={statusMessage} streamPanels={streamPanels} /> : null}
+                      {resultsState === "result" ? <ResultCards key="result" review={currentReview} /> : null}
+                    </AnimatePresence>
+                  </div>
               </div>
             </div>
 

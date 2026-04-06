@@ -1,15 +1,70 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, CircleAlert, CircleDashed, MessageSquareQuote, ArrowRight } from "lucide-react";
+import { CheckCircle2, CircleDashed, MessageSquareQuote, ArrowRight } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { getScoreTheme, truncate } from "@/lib/utils";
 import { loadTransientReview, saveTransientReview } from "@/lib/transientReview";
 import ScoreGauge from "@/components/ScoreGauge";
 import HonestFriendAvatar from "@/components/HonestFriendAvatar";
+
+function AuditSkillCard({ item }) {
+  const tone =
+    item.status === "direct"
+      ? "border-emerald-500/18 bg-emerald-500/8"
+      : item.status === "transferable"
+        ? "border-amber-400/20 bg-amber-400/8"
+        : "border-red-400/18 bg-red-500/8";
+
+  return (
+    <div className={`rounded-[1.35rem] border p-4 ${tone}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="text-sm font-semibold text-[#111827]">{item.skill}</div>
+        <div className="rounded-full border border-black/8 px-3 py-1 text-[10px] uppercase tracking-[0.22em] text-[#334155]">
+          {item.status}
+        </div>
+      </div>
+      <div className="mt-3 text-sm leading-7 text-[#334155]">{item.evidence}</div>
+      {item.bridgeRecommendation ? (
+        <div className="mt-3 rounded-[1rem] border border-black/6 bg-black/[0.03] p-3 text-sm leading-7 text-[#334155]">
+          <strong className="text-[#111827]">Bridge this gap:</strong> {item.bridgeRecommendation}
+          {item.bridgeWhy ? <div className="mt-2 text-xs text-[#475569]">{item.bridgeWhy}</div> : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function RewriteCard({ item }) {
+  return (
+    <div className="rounded-[1.35rem] border border-[#d4a85c]/18 bg-[#f5f5f5] p-4">
+      <div className="space-y-3 text-sm leading-7 text-[#334155]">
+        <div>
+          <strong className="text-[#111827]">Original:</strong> {item.original}
+        </div>
+        <div>
+          <strong className="text-[#111827]">Rewrite:</strong> {item.rewrite}
+        </div>
+        <div>
+          <strong className="text-[#111827]">Why this is stronger:</strong> {item.why}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InterviewCard({ question, index }) {
+  const label = index < 2 ? "Pressure Question" : "Experience Question";
+
+  return (
+    <div className="rounded-[1.5rem] border border-[#d4a85c]/18 bg-[#f5f5f5] p-5 shadow-[0_14px_40px_rgba(0,0,0,0.08)]">
+      <div className="text-[11px] uppercase tracking-[0.24em] text-[#b3872f]">{label}</div>
+      <div className="mt-3 text-base leading-8 text-[#111827]">{question}</div>
+    </div>
+  );
+}
 
 function MatrixColumn({ title, items, accent }) {
   const accentMap = {
@@ -136,86 +191,118 @@ export default function ResultsDisplay({ reviewId, signupPrompt = false }) {
 
   const theme = getScoreTheme(review.fitScore);
   const honestAssessment = review.redFlags?.honestAssessment || "We found both strengths and real gaps in your fit for this role.";
+  const audit = review.audit || { skillAudit: [], interviewQuestions: [], bulletRewrites: [] };
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       {signupPrompt ? null : null}
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="liquid-panel rounded-[2rem] p-6">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">ATS Gauge</div>
-          <div className="mt-4 flex justify-center">
-            <ScoreGauge score={review.fitScore} />
-          </div>
-          <div className={`mt-5 inline-flex rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.22em] ${theme.badge}`}>
-            {theme.label}
+      <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="space-y-6">
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="flex flex-wrap items-start justify-between gap-5">
+              <div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Audit Overview</div>
+                <h1 className="mt-2 text-4xl font-bold tracking-[-0.06em] text-white">In-Depth Auditor</h1>
+                <div className={`mt-4 inline-flex rounded-full border px-4 py-2 text-[11px] uppercase tracking-[0.22em] ${theme.badge}`}>
+                  {theme.label}
+                </div>
+              </div>
+              <ScoreGauge score={review.fitScore} />
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="liquid-subtle rounded-[1.35rem] p-4">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Keyword Match</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.keywordMatchPercent}%</div>
+              </div>
+              <div className="liquid-subtle rounded-[1.35rem] p-4">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Relevance</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.experienceRelevancePercent}%</div>
+              </div>
+              <div className="liquid-subtle rounded-[1.35rem] p-4">
+                <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Completeness</div>
+                <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.resumeCompletenessPercent}%</div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
+              <div className="flex items-center gap-4">
+                <HonestFriendAvatar />
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">No-BS Auditor</div>
+                  <div className="mt-2 text-base leading-8 text-white/86 whitespace-pre-line">{honestAssessment}</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="liquid-subtle rounded-[1.35rem] p-4">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Keyword Match</div>
-              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.keywordMatchPercent}%</div>
-            </div>
-            <div className="liquid-subtle rounded-[1.35rem] p-4">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Relevance</div>
-              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.experienceRelevancePercent}%</div>
-            </div>
-            <div className="liquid-subtle rounded-[1.35rem] p-4">
-              <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Completeness</div>
-              <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-white">{review.mismatchMatrix.breakdown.resumeCompletenessPercent}%</div>
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Evidence By Requirement</div>
+            <div className="mt-5 grid gap-4">
+              {(audit.skillAudit || []).length ? (
+                audit.skillAudit.map((item) => <AuditSkillCard key={item.skill} item={item} />)
+              ) : (
+                <div className="rounded-[1.35rem] border border-white/8 px-4 py-6 text-sm text-white/48">No skill audit was generated.</div>
+              )}
             </div>
           </div>
 
-          <div className="mt-6 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-5">
-            <div className="text-[11px] uppercase tracking-[0.22em] text-white/34">Resume Read Check</div>
-            <p className="mt-3 text-sm leading-7 text-white/60">{truncate(review.resume.extractedText, 320)}</p>
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Direct Fix Recommendations</div>
+            <div className="mt-5 grid gap-4">
+              {(audit.bulletRewrites || []).length ? (
+                audit.bulletRewrites.map((item, index) => <RewriteCard key={`rewrite-${index}`} item={item} />)
+              ) : (
+                <div className="rounded-[1.35rem] border border-white/8 px-4 py-6 text-sm text-white/48">Not enough resume detail was available to rewrite bullets yet.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="liquid-panel rounded-[2rem] p-6">
-          <div className="flex items-center gap-4">
-            <HonestFriendAvatar />
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Honest Friend</div>
-              <h1 className="mt-1 text-4xl font-bold tracking-[-0.06em] text-white">Here&apos;s where you stand</h1>
-            </div>
+        <div className="space-y-6">
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Interview Prep</div>
+            <div className="mt-4 text-sm leading-7 text-white/60">These are written for this exact resume and this exact job, not generic prep questions.</div>
+            <motion.div variants={revealList} initial="hidden" animate="show" className="mt-5 grid gap-4">
+              {(audit.interviewQuestions || []).length ? (
+                audit.interviewQuestions.map((question, index) => (
+                  <motion.div variants={revealList} key={`question-${index}`}>
+                    <InterviewCard question={question} index={index} />
+                  </motion.div>
+                ))
+              ) : (
+                <div className="rounded-[1.35rem] border border-white/8 px-4 py-6 text-sm text-white/48">Interview questions will appear here once the audit has enough signal.</div>
+              )}
+            </motion.div>
           </div>
 
-          <motion.div
-            variants={revealList}
-            initial="hidden"
-            animate="show"
-            className="mt-6 grid gap-4"
-          >
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#111827]">
-                <CheckCircle2 className="h-4 w-4" />
-                Pros
-              </div>
-              <ul className="mt-3 space-y-2 text-sm leading-7 text-[#334155]">
-                {(review.strengths || []).map((item, index) => (
-                  <li key={`strength-${index}`}>{item}</li>
-                ))}
-              </ul>
-            </motion.div>
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">What&apos;s Working</div>
+            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/76">
+              {(review.strengths || []).map((item, index) => (
+                <li key={`strength-${index}`} className="rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-3">
+                  <strong className="text-white">-</strong> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#111827]">
-                <CircleAlert className="h-4 w-4" />
-                Cons
-              </div>
-              <ul className="mt-3 space-y-2 text-sm leading-7 text-[#334155]">
-                {(review.weaknesses || []).map((item, index) => (
-                  <li key={`missing-${index}`}>{item}</li>
-                ))}
-              </ul>
-            </motion.div>
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">What&apos;s Missing</div>
+            <ul className="mt-4 space-y-3 text-sm leading-7 text-white/76">
+              {(review.weaknesses || []).map((item, index) => (
+                <li key={`missing-${index}`} className="rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-3">
+                  <strong className="text-white">-</strong> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-            <motion.div variants={revealList} className="rounded-[1.6rem] border border-[#d4a85c]/16 bg-[#f5f5f5] p-5">
-              <div className="text-sm font-semibold text-[#111827]">Harsh Truth</div>
-              <p className="mt-3 text-base leading-8 text-[#111827]">{honestAssessment}</p>
-            </motion.div>
-          </motion.div>
+          <div className="liquid-panel rounded-[2rem] p-6">
+            <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Resume Read Check</div>
+            <p className="mt-3 text-sm leading-7 text-white/60">{truncate(review.resume.extractedText, 320)}</p>
+          </div>
         </div>
       </section>
 

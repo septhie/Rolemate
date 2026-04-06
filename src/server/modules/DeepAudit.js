@@ -229,6 +229,11 @@ function getTopEvidenceItems(sources) {
     .slice(0, 6);
 }
 
+function shortenResponsibility(text) {
+  const clean = normalize(text).replace(/^responsibilities include\s*/i, "").replace(/^requirements:\s*/i, "");
+  return clean.replace(/[.]+$/, "").slice(0, 120);
+}
+
 function buildHonestAssessment({ fitScore, structuredResume, skillAudit, jobProfile }) {
   const directCount = skillAudit.filter((item) => item.status === "direct").length;
   const missing = skillAudit.filter((item) => item.status === "missing");
@@ -265,8 +270,8 @@ function buildExperienceQuestions(structuredResume, jobProfile) {
   const responsibilities = (jobProfile.keyResponsibilities || []).map(normalize).filter(Boolean);
 
   return sources.slice(0, 3).map((item, index) => {
-    const responsibility = responsibilities[index] || responsibilities[0] || "the kind of work this role will expect";
-    return `You mentioned ${item.title}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility.toLowerCase()}?`;
+    const responsibility = shortenResponsibility(responsibilities[index] || responsibilities[0] || "the kind of work this role will expect");
+    return `You mentioned ${item.title}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
   });
 }
 
@@ -275,7 +280,7 @@ function collectRewriteCandidates(structuredResume) {
 
   const pushBullet = (context, bullet) => {
     const cleanBullet = normalize(bullet);
-    if (!cleanBullet) {
+    if (!cleanBullet || cleanBullet.split(/\s+/).length < 3 || /^no\b/i.test(cleanBullet) || /^\d+\s*(year|month)s?\.?$/i.test(cleanBullet)) {
       return;
     }
 
@@ -289,7 +294,7 @@ function collectRewriteCandidates(structuredResume) {
     const context = [entry.role, entry.company].filter(Boolean).join(" at ");
     if ((entry.bullets || []).length) {
       entry.bullets.forEach((bullet) => pushBullet(context, bullet));
-    } else if (context) {
+    } else if (context && context.split(/\s+/).length >= 4) {
       pushBullet(context, context);
     }
   });
@@ -308,22 +313,35 @@ function collectRewriteCandidates(structuredResume) {
     (entry.bullets || []).forEach((bullet) => pushBullet(context, bullet));
   });
 
+  const summarySentences = (structuredResume.summary || "")
+    .split(/(?<=[.!?])\s+/)
+    .map(normalize)
+    .filter((sentence) => sentence.split(/\s+/).length >= 5)
+    .filter((sentence) => !/^no internships?\.?$/i.test(sentence));
+
+  summarySentences.forEach((sentence) => pushBullet("Summary", sentence));
+
   return uniqueBy(candidates, (item) => `${item.context}:${item.original}`);
 }
 
 function tightenRewrite(original, context) {
   let rewrite = original
-    .replace(/\bworked on\b/i, "Delivered")
+    .replace(/\bworked on\b/i, "Worked on")
     .replace(/\bhelped\b/i, "Supported")
     .replace(/\bresponsible for\b/i, "Owned")
     .replace(/\bused\b/i, "Applied")
-    .replace(/\bdid\b/i, "Executed");
+    .replace(/\bdid\b/i, "Executed")
+    .replace(/\baPI\b/g, "API");
 
-  if (!/^(built|created|managed|led|supported|delivered|executed|coordinated|tracked|analyzed|ran|developed|applied|owned)/i.test(rewrite)) {
-    rewrite = `Delivered ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
+  if (/intern/i.test(rewrite) && !/\b(executed|supported|owned|managed|built|ran|created|coordinated)\b/i.test(rewrite)) {
+    rewrite = rewrite.replace(/\bIntern\b/i, "internship role");
   }
 
-  if (context && !normalizeLower(rewrite).includes(normalizeLower(context).split(" at ")[0])) {
+  if (!/^(built|created|managed|led|supported|executed|coordinated|tracked|analyzed|ran|developed|applied|owned|worked)/i.test(rewrite)) {
+    rewrite = `Focused on ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
+  }
+
+  if (context && context !== "Summary" && !normalizeLower(rewrite).includes(normalizeLower(context).split(" at ")[0])) {
     rewrite = `${rewrite} in ${context}`;
   }
 
@@ -363,7 +381,7 @@ function buildBulletRewrites(structuredResume) {
 }
 
 function buildStrengths(skillAudit) {
-  return skillAudit
+  const strengths = skillAudit
     .filter((item) => item.status !== "missing")
     .slice(0, 5)
     .map((item) =>
@@ -371,6 +389,12 @@ function buildStrengths(skillAudit) {
         ? `You already prove ${item.skill} with explicit evidence.`
         : `You have adjacent proof for ${item.skill}, but it should be framed more directly.`
     );
+
+  if (!strengths.length) {
+    strengths.push("You still have some usable signal here through education, experience, or projects, even if the role is a stretch.");
+  }
+
+  return strengths;
 }
 
 function buildMissing(skillAudit) {
@@ -416,6 +440,18 @@ function generateDeepAudit({ structuredResume, jobProfile, mismatchMatrix }) {
   const skillAudit = buildSkillAudit(jobProfile, sources);
   const pressureQuestions = buildPressureQuestions(skillAudit, structuredResume, jobProfile);
   const experienceQuestions = buildExperienceQuestions(structuredResume, jobProfile);
+  while (pressureQuestions.length < 2) {
+    const fallbackSkill = skillAudit[pressureQuestions.length]?.skill || "this role's top requirement";
+    pressureQuestions.push(
+      `What would you say if an interviewer asked you to prove ${fallbackSkill} from the resume you submitted today?`
+    );
+  }
+  while (experienceQuestions.length < 3) {
+    const roleTitle = normalize(jobProfile.jobTitle || "this role");
+    experienceQuestions.push(
+      `Which part of your current background best prepares you for ${roleTitle}, and where would you need the most ramp time?`
+    );
+  }
   const interviewQuestions = [...pressureQuestions, ...experienceQuestions].slice(0, 5);
   const bulletRewrites = buildBulletRewrites(structuredResume);
   const honestAssessment = buildHonestAssessment({

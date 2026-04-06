@@ -39,6 +39,17 @@ function splitSentences(text) {
     .filter(Boolean);
 }
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsTerm(text, term) {
+  const pattern = term.includes(".")
+    ? new RegExp(escapeRegex(term), "i")
+    : new RegExp(`(^|[^a-z])${escapeRegex(term)}([^a-z]|$)`, "i");
+  return pattern.test(text);
+}
+
 function extractContactInfo(lines) {
   const contactInfo = {
     name: "",
@@ -106,12 +117,16 @@ function parseInlineWork(text) {
   const workEntries = [];
 
   for (const sentence of sentences) {
+    if (/^no internships?\.?$/i.test(sentence) || /^no experience\.?$/i.test(sentence)) {
+      continue;
+    }
+
     if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald)/i.test(sentence)) {
       continue;
     }
 
     const roleMatch =
-      sentence.match(/([A-Z][A-Za-z&/ ]+(Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager))/) ||
+      sentence.match(/([A-Z][A-Za-z&/ ]+(Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager))( at [A-Za-z0-9&' .-]+)?/i) ||
       sentence.match(/(McDonald's Crew Member)/i) ||
       sentence.match(/(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)/i);
 
@@ -201,7 +216,7 @@ function parseInlineCertifications(text) {
 function parseSkills(text) {
   const lower = text.toLowerCase();
   return knownSkillTerms
-    .filter((skill) => lower.includes(skill))
+    .filter((skill) => containsTerm(lower, skill))
     .map((skill) => skill.replace(/\b\w/g, (char) => char.toUpperCase()));
 }
 

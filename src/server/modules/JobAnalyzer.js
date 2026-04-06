@@ -3,6 +3,12 @@ const { buildJobAnalyzerPrompt } = require("../prompts/jobAnalyzerPrompt");
 const { condenseText } = require("../utils/promptCompression");
 
 const knownSkills = [
+  "google analytics",
+  "content calendars",
+  "cloud deployment",
+  "project management",
+  "budget management",
+  "data analysis",
   "excel",
   "sql",
   "python",
@@ -14,16 +20,11 @@ const knownSkills = [
   "tableau",
   "power bi",
   "salesforce",
-  "budget management",
   "leadership",
-  "project management",
   "communication",
   "customer service",
-  "data analysis",
   "google sheets",
-  "google analytics",
   "social media",
-  "content calendars",
   "financial modeling",
   "valuation",
   "powerpoint",
@@ -31,7 +32,6 @@ const knownSkills = [
   "git",
   "apis",
   "testing",
-  "cloud deployment",
   "analytics",
   "writing",
   "collaboration",
@@ -39,6 +39,17 @@ const knownSkills = [
   "marketing",
   "brand support"
 ];
+
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function containsSkill(text, skill) {
+  const pattern = skill.includes(".")
+    ? new RegExp(escapeRegex(skill), "i")
+    : new RegExp(`(^|[^a-z])${escapeRegex(skill)}([^a-z]|$)`, "i");
+  return pattern.test(text);
+}
 
 function inferExperienceLevel(text) {
   const lower = text.toLowerCase();
@@ -60,7 +71,10 @@ function splitLines(jobDescription) {
 
 function extractSkillsFromText(text) {
   const lower = text.toLowerCase();
-  return knownSkills.filter((skill) => lower.includes(skill));
+  return knownSkills
+    .slice()
+    .sort((left, right) => right.length - left.length)
+    .filter((skill) => containsSkill(lower, skill));
 }
 
 function unique(items = []) {

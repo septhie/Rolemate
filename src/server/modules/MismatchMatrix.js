@@ -32,7 +32,12 @@ function getAliases(keyword) {
     python: ["python scripts", "automation"],
     react: ["frontend features", "frontend", "web applications"],
     marketing: ["campaign", "brand", "social media"],
-    writing: ["content", "copy", "social media"]
+    writing: ["content", "copy", "social media"],
+    organization: ["content calendar", "content calendars", "inventory", "operations", "scheduling"],
+    collaboration: ["cross-functional", "teamwork", "worked with", "partnered"],
+    apis: ["api integrations", "api", "rest"],
+    git: ["github", "version control"],
+    debugging: ["troubleshooting", "fixed bugs", "bug fixes", "qa", "tested"]
   };
 
   return aliasMap[lower] || [];
@@ -64,6 +69,7 @@ function scoreCompleteness(structuredResume) {
 }
 
 function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
+  const title = normalizeArray([jobProfile.jobTitle || ""]).join(" ");
   const responsibilitySignals = normalizeArray(jobProfile.keyResponsibilities || [])
     .flatMap((item) => item.split(/[,/]| and /))
     .map((item) => item.trim())
@@ -81,7 +87,24 @@ function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
   }
 
   const matched = candidateSignals.filter((signal) => keywordAppears(corpus, signal) || mapTransferableGap(signal, corpus));
-  const score = Math.round((matched.length / candidateSignals.length) * 100);
+  let score = Math.round((matched.length / candidateSignals.length) * 100);
+
+  const hasInternship = /intern/.test(corpus);
+  const hasProjects = structuredResume.projects?.length > 0;
+
+  if (/software|engineer|developer/.test(title)) {
+    if (hasInternship) score += 18;
+    if (hasProjects) score += 12;
+    if (/react|javascript|python|api/.test(corpus)) score += 12;
+  } else if (/marketing|brand|content|social/.test(title)) {
+    if (hasInternship) score += 20;
+    if (/social media|analytics|campaign|brand|google analytics/.test(corpus)) score += 18;
+    if (structuredResume.certifications?.length) score += 8;
+  } else if (/investment|banking|finance|analyst/.test(title)) {
+    if (/finance|economics|accounting/.test(corpus)) score += 12;
+    if (/excel|valuation|modeling|powerpoint/.test(corpus)) score += 18;
+  }
+
   return Math.max(25, Math.min(100, score));
 }
 

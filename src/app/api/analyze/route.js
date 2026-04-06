@@ -177,7 +177,13 @@ export async function POST(request) {
         send("status", { message: statusMessages[1] });
         devLog("jd-parsing-summary", parsedJobProfile);
 
-        const mismatchMatrix = buildMismatchMatrix(structuredResume, parsedJobProfile);
+        const enrichedJobProfile = {
+          ...parsedJobProfile,
+          jobTitle,
+          companyName
+        };
+
+        const mismatchMatrix = buildMismatchMatrix(structuredResume, enrichedJobProfile);
         devLog("mismatch-matrix", mismatchMatrix);
         devLog("fit-score", mismatchMatrix.breakdown);
 
@@ -185,18 +191,14 @@ export async function POST(request) {
           Promise.resolve(
             generateDeepAudit({
               structuredResume,
-              jobProfile: {
-                ...parsedJobProfile,
-                jobTitle,
-                companyName
-              },
+              jobProfile: enrichedJobProfile,
               mismatchMatrix
             })
           ),
           generateVerificationQuestions({
             hardGaps: mismatchMatrix.hardGaps,
             structuredResume,
-            jobProfile: parsedJobProfile,
+            jobProfile: enrichedJobProfile,
             runContext
           })
         ]);
@@ -217,7 +219,7 @@ export async function POST(request) {
         const review = buildTransientReview({
           ingestion,
           structuredResume,
-          parsedJobProfile,
+          parsedJobProfile: enrichedJobProfile,
           mismatchMatrix,
           deepAudit,
           verificationQuestionResult,

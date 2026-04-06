@@ -317,36 +317,87 @@ function collectRewriteCandidates(structuredResume) {
     .split(/(?<=[.!?])\s+/)
     .map(normalize)
     .filter((sentence) => sentence.split(/\s+/).length >= 5)
-    .filter((sentence) => !/^no internships?\.?$/i.test(sentence));
+    .filter((sentence) => !/^no internships?\.?$/i.test(sentence))
+    .filter((sentence) => !/^work experience:/i.test(sentence));
 
   summarySentences.forEach((sentence) => pushBullet("Summary", sentence));
 
   return uniqueBy(candidates, (item) => `${item.context}:${item.original}`);
 }
 
+function inferOutcomeHint(text) {
+  const lower = normalizeLower(text);
+
+  if (/tracked|analytics|engagement|reporting/.test(lower)) {
+    return "and made performance easier to evaluate";
+  }
+
+  if (/built|created|developed|shipped/.test(lower)) {
+    return "and turned the work into something usable";
+  }
+
+  if (/customer service|cash|register|operations|inventory/.test(lower)) {
+    return "in a fast-moving customer environment";
+  }
+
+  if (/calendar|social media|campaign|content/.test(lower)) {
+    return "with clearer ownership and follow-through";
+  }
+
+  return "";
+}
+
 function tightenRewrite(original, context) {
-  let rewrite = original
-    .replace(/\bworked on\b/i, "Worked on")
-    .replace(/\bhelped\b/i, "Supported")
-    .replace(/\bresponsible for\b/i, "Owned")
-    .replace(/\bused\b/i, "Applied")
-    .replace(/\bdid\b/i, "Executed")
-    .replace(/\baPI\b/g, "API");
+  const cleanContext = normalize(context);
+  const contextRole = cleanContext.split(" at ")[0] || cleanContext;
+  let rewrite = original.replace(/\baPI\b/g, "API").trim();
 
-  if (/intern/i.test(rewrite) && !/\b(executed|supported|owned|managed|built|ran|created|coordinated)\b/i.test(rewrite)) {
-    rewrite = rewrite.replace(/\bIntern\b/i, "internship role");
+  rewrite = rewrite
+    .replace(/^internship experience:\s*/i, "")
+    .replace(/^work experience:\s*/i, "")
+    .replace(/^personal projects include\s*/i, "Built ")
+    .replace(/^finance major student/i, "Finance major")
+    .replace(/^computer science junior/i, "Computer science junior")
+    .replace(/^senior marketing major/i, "Senior marketing major");
+
+  if (/^wrote python scripts/i.test(rewrite)) {
+    rewrite = "Wrote Python scripts to automate repeatable work and support internal tooling";
+  } else if (/^built frontend features/i.test(rewrite)) {
+    rewrite = "Built frontend features in React that supported live product work";
+  } else if (/^shipped internal tools/i.test(rewrite)) {
+    rewrite = "Shipped internal tools that made day-to-day execution easier for the team";
+  } else if (/^ran social media/i.test(rewrite)) {
+    rewrite = "Ran social media operations with clearer ownership over posting and engagement tracking";
+  } else if (/^created campaign calendars/i.test(rewrite)) {
+    rewrite = "Created campaign calendars that made launch planning and coordination more structured";
+  } else if (/^tracked engagement/i.test(rewrite)) {
+    rewrite = "Tracked engagement data and used it to understand what content was working";
+  } else if (/^google analytics certified/i.test(rewrite)) {
+    rewrite = "Earned Google Analytics certification to back up hands-on reporting and measurement work";
+  } else if (/^mcdonald'?s crew member/i.test(rewrite)) {
+    rewrite = "Handled fast-paced customer operations, cash transactions, and day-to-day service demands";
+  } else if (/^worked the register/i.test(rewrite)) {
+    rewrite = "Managed register transactions accurately in a high-volume service setting";
+  } else if (/^customer service/i.test(rewrite)) {
+    rewrite = "Delivered customer service in a fast-moving environment with constant real-time problem solving";
+  } else if (/^(built|created|developed|managed|led|tracked|analyzed|ran|coordinated|supported|wrote|shipped)\b/i.test(rewrite)) {
+    rewrite = rewrite.charAt(0).toUpperCase() + rewrite.slice(1);
+  } else if (/^(marketing intern|brand marketing intern|software engineering intern|mcdonald'?s crew member)/i.test(rewrite)) {
+    rewrite = `${rewrite.charAt(0).toUpperCase() + rewrite.slice(1)} with responsibilities that are worth making more explicit`;
+  } else {
+    rewrite = `Showed ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
   }
 
-  if (!/^(built|created|managed|led|supported|executed|coordinated|tracked|analyzed|ran|developed|applied|owned|worked)/i.test(rewrite)) {
-    rewrite = `Focused on ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
+  if (cleanContext && cleanContext !== "Summary" && !normalizeLower(rewrite).includes(normalizeLower(contextRole))) {
+    rewrite = `${rewrite} through ${cleanContext}`;
   }
 
-  if (context && context !== "Summary" && !normalizeLower(rewrite).includes(normalizeLower(context).split(" at ")[0])) {
-    rewrite = `${rewrite} in ${context}`;
+  const outcomeHint = inferOutcomeHint(`${original} ${cleanContext}`);
+  if (outcomeHint && !normalizeLower(rewrite).includes(normalizeLower(outcomeHint))) {
+    rewrite = `${rewrite} ${outcomeHint}`;
   }
 
   rewrite = rewrite.replace(/\s+/g, " ").trim();
-  rewrite = rewrite.charAt(0).toUpperCase() + rewrite.slice(1);
 
   if (!/[.!?]$/.test(rewrite)) {
     rewrite += ".";
@@ -422,7 +473,7 @@ function buildAuditMarkdown({ honestAssessment, skillAudit, interviewQuestions, 
   ].join("\n");
 
   const rewriteBody = [
-    "**Bullet Rewrites**",
+    "**Direct Fix Recommendations**",
     ...bulletRewrites.map(
       (item) => `- **Original:** ${item.original}\n  **Rewrite:** ${item.rewrite}\n  **Why this is stronger:** ${item.why}`
     )

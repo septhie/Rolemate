@@ -125,27 +125,39 @@ function parseInlineWork(text) {
       continue;
     }
 
+    const normalizedSentence = sentence.replace(/^work experience:\s*/i, "").trim();
     const roleMatch =
-      sentence.match(/([A-Z][A-Za-z&/ ]+(Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager))( at [A-Za-z0-9&' .-]+)?/i) ||
-      sentence.match(/(McDonald's Crew Member)/i) ||
-      sentence.match(/(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)/i);
+      normalizedSentence.match(/(McDonald's\s+Crew\s+Member)/i) ||
+      normalizedSentence.match(
+        /\b([A-Z][A-Za-z&/'-]+(?:\s+[A-Z][A-Za-z&/'-]+){0,3}\s+(?:Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager|Cashier|Analyst))\b/i
+      ) ||
+      normalizedSentence.match(/\b(Marketing Intern|Brand Marketing Intern|Software Engineering Intern)\b/i);
 
     const durationMatch = sentence.match(/(\d+\s*(year|month)s?)/i);
     const companyMatch =
       sentence.match(/at ([A-Z][A-Za-z0-9&' .-]+)/) ||
       sentence.match(/for ([A-Z][A-Za-z0-9&' .-]+ (club|company|startup))/i);
 
-    const bulletParts = sentence
+    const bulletParts = normalizedSentence
       .split(/,| and /)
-      .map((item) => item.trim())
-      .filter((item) => item.length > 3);
+      .map((item) => item.replace(/^work experience:\s*/i, "").trim())
+      .filter((item) => item.length > 3)
+      .filter((item) => !/^\d+\s*(year|month)s?\.?$/i.test(item))
+      .filter((item) => !/^no internships?\.?$/i.test(item));
+
+    const role = roleMatch ? roleMatch[0].trim() : normalizedSentence;
+    const cleanedBullets = bulletParts
+      .filter((item) => normalizeBullet(item).toLowerCase() !== role.toLowerCase())
+      .map(normalizeBullet)
+      .filter((item) => item.length > 3)
+      .filter((item) => !/^(intern(ship)? experience|work experience)$/i.test(item));
 
     workEntries.push({
-      role: roleMatch ? roleMatch[0].trim() : sentence,
+      role,
       company: companyMatch ? companyMatch[1].trim() : "",
       location: "",
       dates: durationMatch ? durationMatch[1] : "",
-      bullets: bulletParts.slice(1).map(normalizeBullet)
+      bullets: cleanedBullets
     });
   }
 

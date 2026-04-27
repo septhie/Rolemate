@@ -46,15 +46,29 @@ function getAliases(skill) {
     analytics: ["google analytics", "performance reporting", "tracked engagement", "reporting", "dashboard"],
     "google analytics": ["analytics", "tracked engagement", "campaign reporting"],
     "social media": ["content calendar", "content calendars", "engagement", "campaign"],
+    "social media management": ["social media", "content calendar", "engagement", "posting"],
     marketing: ["brand", "campaign", "social media", "content"],
     leadership: ["led", "train", "mentored", "organized", "coordinated"],
     organization: ["calendar", "content calendar", "inventory", "operations", "scheduling"],
     "data analysis": ["analytics", "excel", "python", "google sheets", "reporting"],
+    "analytical skills": ["analytics", "excel", "reporting", "financial analysis"],
     sql: ["database", "query", "analytics"],
     testing: ["debugging", "qa", "reviewed pull requests"],
     "cloud deployment": ["deployment", "vercel", "aws", "cloud"],
     collaboration: ["cross-functional", "teamwork", "worked with", "partnered"],
-    writing: ["content", "copy", "social media", "campaign"]
+    writing: ["content", "copy", "social media", "campaign"],
+    recruiting: ["matched mentors", "participant communication", "front desk", "events"],
+    auditing: ["audit testing", "documentation review", "auditing", "workpapers"],
+    bookkeeping: ["treasurer", "tracked funds", "tax returns"],
+    "project coordination": ["status notes", "timelines", "deliverables", "events"],
+    "stakeholder management": ["cross-functional", "client relationships", "status notes"],
+    "incident response": ["ticket escalations", "endpoint issues", "troubleshooting", "it support"],
+    "market research": ["survey data", "user feedback", "research"],
+    "data visualization": ["tableau", "dashboard", "reporting"],
+    "siem tools": ["splunk", "siem", "alert triage"],
+    siem: ["splunk", "siem tools", "alert triage"],
+    "project tracking": ["timelines", "tracked deliverables", "status notes", "project coordination"],
+    "stakeholder updates": ["weekly status notes", "cross-functional", "client relationships"]
   };
 
   return aliasMap[normalizeLower(skill)] || [];
@@ -93,6 +107,30 @@ function getBridgeRecommendation(skill, jobProfile) {
       recommendation:
         "Add reporting, spreadsheet, dashboard, or campaign analysis work that shows how you interpreted results and acted on them.",
       why: "This proves you can move from raw information to decisions."
+    };
+  }
+
+  if (lower.includes("recruit")) {
+    return {
+      recommendation:
+        "Add a concrete example where you scheduled, coordinated, screened, mentored, or managed candidate-like communication for people.",
+      why: "Recruiting teams want to see relationship handling plus process follow-through, not just people skills in the abstract."
+    };
+  }
+
+  if (lower.includes("audit") || lower.includes("account")) {
+    return {
+      recommendation:
+        "Add coursework, volunteer tax work, treasury work, or documentation-heavy examples that show precision with financial details.",
+      why: "Audit and accounting readers look for evidence that you can be trusted with structured, detail-sensitive work."
+    };
+  }
+
+  if (lower.includes("project") || lower.includes("program") || lower.includes("stakeholder")) {
+    return {
+      recommendation:
+        "Add a project where you tracked owners, timelines, updates, or deliverables across multiple people.",
+      why: "Coordination roles are won by showing visible follow-through, not just saying you are organized."
     };
   }
 
@@ -254,13 +292,23 @@ function getSourceQuality(source) {
 }
 
 function getTopEvidenceItems(sources) {
-  return sources
+  const primary = sources
     .filter((item) => item.type === "experience" || item.type === "project" || item.type === "activity")
     .filter((item) => item.displayText.length > 10)
     .filter((item) => !isNegativeEvidence(item.displayText))
     .filter((item) => !isWeakAnchor(item.title))
     .sort((left, right) => getSourceQuality(right) - getSourceQuality(left))
     .slice(0, 6);
+
+  if (primary.length) {
+    return primary;
+  }
+
+  return sources
+    .filter((item) => item.displayText.length > 10)
+    .filter((item) => !isNegativeEvidence(item.displayText))
+    .sort((left, right) => getSourceQuality(right) - getSourceQuality(left))
+    .slice(0, 4);
 }
 
 function shortenResponsibility(text) {
@@ -296,27 +344,29 @@ function buildHonestAssessment({ fitScore, structuredResume, skillAudit, jobProf
 function buildPressureQuestions(skillAudit, structuredResume, jobProfile) {
   const evidenceItems = getTopEvidenceItems(collectEvidenceSources(structuredResume));
   const anchor = evidenceItems[0];
+  const anchorLabel = anchor
+    ? anchor.title && !isWeakAnchor(anchor.title)
+      ? anchor.title
+      : anchor.displayText.slice(0, 90).trim()
+    : "your current resume evidence";
   const gaps = skillAudit.filter((item) => item.status === "missing").slice(0, 2);
   const softCandidates = skillAudit.filter((item) => item.status === "transferable");
 
   if (!gaps.length && softCandidates.length) {
     return softCandidates.slice(0, 2).map((gap) => {
-      const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
-      return `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${fallbackContext}?`;
+      return `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${anchorLabel}?`;
     });
   }
 
   const questions = gaps.map((gap) => {
-    const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
-    return `The JD requires ${gap.skill}, but your resume mainly shows ${fallbackContext}. How would you handle a day-one task that depends on ${gap.skill} without overstating what you already know?`;
+    return `The JD requires ${gap.skill}, but your resume mainly shows ${anchorLabel}. How would you handle a day-one task that depends on ${gap.skill} without overstating what you already know?`;
   });
 
   let transferableIndex = 0;
   while (questions.length < 2 && transferableIndex < softCandidates.length) {
     const gap = softCandidates[transferableIndex];
-    const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
     questions.push(
-      `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${fallbackContext}?`
+      `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${anchorLabel}?`
     );
     transferableIndex += 1;
   }
@@ -331,7 +381,8 @@ function buildExperienceQuestions(structuredResume, jobProfile) {
   return sources.slice(0, 3).map((item, index) => {
     const responsibility = shortenResponsibility(responsibilities[index] || responsibilities[0] || "the kind of work this role will expect");
     const label = item.title.length > 80 ? item.title.slice(0, 80).trim() : item.title;
-    return `You mentioned ${label}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
+    const bulletHint = item.bullets?.[0] ? ` You also mention ${item.bullets[0]}.` : "";
+    return `You mentioned ${label}.${bulletHint} What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
   });
 }
 
@@ -450,6 +501,22 @@ function inferRewriteFromContext(original, context) {
     return "Built several years of customer-facing experience managing enterprise relationships and surfacing user needs.";
   }
 
+  if (/managed enterprise client relationships/.test(lowerOriginal)) {
+    return "Managed enterprise client relationships while collecting user feedback and supporting renewal preparation.";
+  }
+
+  if (/matched mentors/i.test(lowerOriginal)) {
+    return "Matched mentors and participants while keeping communication and scheduling moving.";
+  }
+
+  if (/organized recruiting events/i.test(lowerOriginal)) {
+    return "Organized recruiting events with visible coordination across participants, logistics, and follow-up.";
+  }
+
+  if (/tracked club budget/i.test(lowerOriginal) || /tracked funds/i.test(lowerOriginal)) {
+    return "Tracked club funds and kept student-organization finances organized and visible.";
+  }
+
   if (/front desk assistant/.test(lowerOriginal)) {
     return "Worked as a front desk assistant in a medical office, handling day-to-day communication and coordination.";
   }
@@ -556,6 +623,12 @@ function tightenRewrite(original, context) {
     rewrite = "Shipped internal tools used to support day-to-day team execution";
   } else if (/^ran social media/i.test(rewrite)) {
     rewrite = "Ran social media operations with clearer ownership over posting and engagement tracking";
+  } else if (/^matched mentors/i.test(rewrite)) {
+    rewrite = "Matched mentors and participants while keeping scheduling and communication organized";
+  } else if (/^organized recruiting events/i.test(rewrite)) {
+    rewrite = "Organized recruiting events that required logistics, communication, and follow-up across participants";
+  } else if (/^tracked club budget/i.test(rewrite)) {
+    rewrite = "Tracked a club budget and kept student-organization finances organized and easy to review";
   } else if (/^created campaign calendars/i.test(rewrite)) {
     rewrite = "Created campaign calendars that made launch planning and coordination more structured";
   } else if (/^tracked engagement/i.test(rewrite)) {
@@ -574,6 +647,10 @@ function tightenRewrite(original, context) {
     rewrite = "Managed register transactions accurately in a high-volume service setting";
   } else if (/^customer service/i.test(rewrite)) {
     rewrite = "Delivered customer service in a fast-moving environment with constant real-time problem solving";
+  } else if (/^handling ticket escalations/i.test(rewrite)) {
+    rewrite = "Handled escalated tickets and helped move troubleshooting issues toward resolution";
+  } else if (/^managed enterprise client relationships/i.test(rewrite)) {
+    rewrite = "Managed enterprise client relationships, surfaced user feedback, and supported renewal preparation";
   } else if (/^(built|created|developed|managed|led|tracked|analyzed|ran|coordinated|supported|wrote|shipped)\b/i.test(rewrite)) {
     rewrite = rewrite.charAt(0).toUpperCase() + rewrite.slice(1);
   } else if (/^(marketing intern|brand marketing intern|software engineering intern|mcdonald'?s crew member)/i.test(rewrite)) {
@@ -589,6 +666,7 @@ function tightenRewrite(original, context) {
     cleanContext !== "Summary" &&
     cleanContext !== "Internship experience" &&
     cleanContext.length < 80 &&
+    !/extracurricular involvement/i.test(cleanContext) &&
     !normalizeLower(rewrite).includes(normalizeLower(contextRole))
   ) {
     rewrite = `${rewrite} through ${cleanContext}`;
@@ -613,7 +691,7 @@ function explainRewrite(original, rewrite) {
     return "This keeps the fact pattern intact while making the line easier to scan.";
   }
 
-  if (/\b(track|report|analy|manage|coordinate|build|develop|lead|support|prepare|work)\b/i.test(rewrite)) {
+  if (/\b(track|report|analy|manage|coordinate|build|develop|lead|support|prepare|work|match|organize)\b/i.test(rewrite)) {
     return "This version leads with the action and makes the evidence easier for a hiring lead to trust quickly.";
   }
 
@@ -621,17 +699,19 @@ function explainRewrite(original, rewrite) {
 }
 
 function buildBulletRewrites(structuredResume) {
-  return collectRewriteCandidates(structuredResume)
-    .filter((item) => !isNegativeEvidence(item.original))
-    .slice(0, 5)
-    .map((item) => {
+  return uniqueBy(
+    collectRewriteCandidates(structuredResume)
+      .filter((item) => !isNegativeEvidence(item.original))
+      .map((item) => {
       const rewrite = tightenRewrite(item.original, item.context);
       return {
         original: item.original,
         rewrite,
         why: explainRewrite(item.original, rewrite)
       };
-    });
+      }),
+    (item) => normalizeLower(item.rewrite)
+  ).slice(0, 5);
 }
 
 function buildStrengths(skillAudit) {
@@ -655,7 +735,7 @@ function buildMissing(skillAudit) {
   return skillAudit
     .filter((item) => item.status === "missing")
     .slice(0, 5)
-    .map((item) => `${item.skill}: ${item.bridgeRecommendation}`);
+    .map((item) => `${item.skill}: ${item.bridgeRecommendation} ${item.bridgeWhy}`);
 }
 
 function buildQuestionFallbacks(interviewQuestions, structuredResume, jobProfile) {
@@ -679,8 +759,28 @@ function buildQuestionFallbacks(interviewQuestions, structuredResume, jobProfile
 }
 
 function buildAuditMarkdown({ honestAssessment, skillAudit, interviewQuestions, bulletRewrites }) {
+  const working = skillAudit
+    .filter((item) => item.status !== "missing")
+    .slice(0, 4)
+    .map((item) =>
+      item.status === "direct"
+        ? `- **${item.skill}** is already proven. ${item.evidence}`
+        : `- **${item.skill}** has adjacent proof. ${item.evidence}`
+    );
+
+  const nextProof = skillAudit
+    .filter((item) => item.status === "missing")
+    .slice(0, 4)
+    .map((item) => `- **${item.skill}**: ${item.bridgeRecommendation} ${item.bridgeWhy}`);
+
   const assessmentBody = [
     honestAssessment,
+    "",
+    "**What's Working**",
+    ...(working.length ? working : ["- There is still usable signal here, but it needs clearer framing."]),
+    "",
+    "**What Needs Proof Next**",
+    ...(nextProof.length ? nextProof : ["- The biggest opportunity now is making your existing proof easier to see fast."]),
     "",
     "**Evidence Audit**",
     ...skillAudit.slice(0, 6).map((item) =>

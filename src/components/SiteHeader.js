@@ -1,38 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Home, LayoutDashboard, LogIn, ScanSearch } from "lucide-react";
+import { Home, ScanSearch } from "lucide-react";
 import RolemateLogo from "@/components/RolemateLogo";
-import { getRemainingFreeCredits, hasUnlockedFullAccess, subscribeToCreditChanges } from "@/lib/freeCredits";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", icon: Home, label: "Home" },
-  { href: "/app", icon: ScanSearch, label: "Studio" },
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/login", icon: LogIn, label: "Login" }
+  { href: "/app", icon: ScanSearch, label: "Review" }
 ];
 
 export default function SiteHeader() {
   const pathname = usePathname();
-  const [remaining, setRemaining] = useState(3);
-  const [unlocked, setUnlocked] = useState(false);
-
-  useEffect(() => {
-    function sync() {
-      setRemaining(getRemainingFreeCredits());
-      setUnlocked(hasUnlockedFullAccess());
-    }
-
-    sync();
-    return subscribeToCreditChanges(sync);
-  }, []);
 
   return (
     <>
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col items-center justify-between border-r border-white/10 bg-black/30 py-[3vh] backdrop-blur-3xl lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-20 flex-col items-center justify-between border-r border-white/10 bg-[#071117]/40 py-[3vh] backdrop-blur-3xl lg:flex">
         <div className="flex flex-col items-center gap-[3.4vh]">
           <RolemateLogo size={42} withWordmark={false} />
           <nav className="flex flex-col items-center gap-[1.6vh]">
@@ -48,7 +32,7 @@ export default function SiteHeader() {
                   className={cn(
                     "flex h-11 w-11 items-center justify-center rounded-[1.1rem] border border-transparent transition",
                     active
-                      ? "bg-[#ffb800]/14 text-[#ffcf57] shadow-[0_0_24px_rgba(255,184,0,0.16)]"
+                      ? "bg-[#8fd6c3]/14 text-[#b7efe1] shadow-[0_0_24px_rgba(143,214,195,0.16)]"
                       : "text-white/48 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
                   )}
                 >
@@ -60,23 +44,19 @@ export default function SiteHeader() {
         </div>
 
         <div className="flex flex-col items-center gap-[1.6vh]">
-          <div className="text-[0.62rem] uppercase tracking-[0.32em] text-white/32 [writing-mode:vertical-rl]">
-            {unlocked ? "Unlocked" : "3-Free"}
-          </div>
+          <div className="text-[0.62rem] uppercase tracking-[0.32em] text-white/28 [writing-mode:vertical-rl]">Open Studio</div>
           <div className="flex flex-col gap-2">
             {[0, 1, 2].map((index) => (
               <span
                 key={index}
-                className={`block h-[4.3vh] min-h-[20px] w-[0.45rem] rounded-full ${
-                  unlocked || index < remaining ? "bg-[#ffb800] shadow-[0_0_18px_rgba(255,184,0,0.32)]" : "bg-white/12"
-                }`}
+                className="block h-[4.3vh] min-h-[20px] w-[0.45rem] rounded-full bg-[#8fd6c3] shadow-[0_0_18px_rgba(143,214,195,0.22)]"
               />
             ))}
           </div>
         </div>
       </aside>
 
-      <nav className="fixed inset-x-0 bottom-[42px] z-40 flex h-14 items-center justify-around border-t border-white/10 bg-black/55 px-4 backdrop-blur-md lg:hidden">
+      <nav className="fixed inset-x-0 bottom-[42px] z-40 flex h-14 items-center justify-around border-t border-white/10 bg-[#071117]/80 px-4 backdrop-blur-md lg:hidden">
         {links.map((link) => {
           const Icon = link.icon;
           const active = pathname === link.href;
@@ -89,7 +69,7 @@ export default function SiteHeader() {
               className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-2xl border border-transparent transition",
                 active
-                  ? "bg-[#ffb800]/14 text-[#ffcf57]"
+                  ? "bg-[#8fd6c3]/14 text-[#b7efe1]"
                   : "text-white/48 hover:border-white/10 hover:bg-white/[0.04] hover:text-white"
               )}
             >
@@ -99,14 +79,14 @@ export default function SiteHeader() {
         })}
       </nav>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex h-[42px] items-center justify-between border-t border-white/10 bg-black/35 px-4 text-[0.62rem] uppercase tracking-[0.22em] text-white/42 backdrop-blur-md lg:left-20 lg:h-[5.5vh] lg:min-h-[42px] lg:px-[3vw] lg:text-[0.68rem] lg:backdrop-blur-[20px]">
+      <div className="fixed bottom-0 left-0 right-0 z-40 flex h-[42px] items-center justify-between border-t border-white/10 bg-[#071117]/68 px-4 text-[0.62rem] uppercase tracking-[0.22em] text-white/42 backdrop-blur-md lg:left-20 lg:h-[5.5vh] lg:min-h-[42px] lg:px-[3vw] lg:text-[0.68rem] lg:backdrop-blur-[20px]">
         <div className="flex items-center gap-[1.2vw]">
-          <span className="h-2 w-2 rounded-full bg-[#ffb800] shadow-[0_0_16px_rgba(255,184,0,0.35)]" />
-          <span>Student-to-student honest analysis</span>
+          <span className="h-2 w-2 rounded-full bg-[#8fd6c3] shadow-[0_0_16px_rgba(143,214,195,0.35)]" />
+          <span>Calm, honest resume reviews</span>
         </div>
         <div className="flex items-center gap-[1vw]">
-          <span>{unlocked ? "Member unlocked" : `${remaining} free credits left`}</span>
-          <span className="hidden sm:inline">Resume truth engine online</span>
+          <span>Unlimited scans</span>
+          <span className="hidden sm:inline">No sign-in. No history. Just signal.</span>
         </div>
       </div>
     </>

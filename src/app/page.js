@@ -42,9 +42,9 @@ export default function LandingPage() {
         <motion.div variants={reveal} initial="hidden" animate="show" className="max-w-2xl">
           <motion.div
             variants={reveal}
-            className="inline-flex items-center gap-2 rounded-full border border-[#d4a85c]/15 bg-[#d4a85c]/6 px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-[#efcf94]"
+            className="inline-flex items-center gap-2 rounded-full border border-[#8fd6c3]/18 bg-[#8fd6c3]/8 px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-[#b7efe1]"
           >
-            <ShieldCheck className="h-3.5 w-3.5 text-[#efcf94]" />
+            <ShieldCheck className="h-3.5 w-3.5 text-[#b7efe1]" />
             Honest Friend Rule built in
           </motion.div>
           <motion.h1
@@ -54,7 +54,7 @@ export default function LandingPage() {
             Your career deserves the truth.
           </motion.h1>
           <motion.p variants={reveal} className="mt-6 max-w-xl text-lg leading-9 text-white/62">
-            Built for students by someone who knows the pressure. Upload your resume, paste the role, and get the blunt version before a recruiter ghosts you for real.
+            Built for students who want signal without the cortisol spike. Upload your resume, paste the role, and get the blunt version in a calmer workspace.
           </motion.p>
           <motion.div variants={reveal} className="mt-10 flex flex-wrap items-center gap-4">
             <Link
@@ -64,7 +64,7 @@ export default function LandingPage() {
               Check My Resume
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <div className="text-sm text-white/48">3 free reviews. No credit card. No BS.</div>
+            <div className="text-sm text-white/48">Unlimited reviews. No account. No fluff.</div>
           </motion.div>
         </motion.div>
 
@@ -74,13 +74,13 @@ export default function LandingPage() {
           transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
           className="liquid-panel relative overflow-hidden rounded-[2rem] p-6 sm:p-8"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(239,207,148,0.12),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(212,168,92,0.12),transparent_42%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(183,239,225,0.12),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(143,214,195,0.12),transparent_42%)]" />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#d4a85c]/20 bg-[#d4a85c]/8 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-[#efcf94]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#8fd6c3]/20 bg-[#8fd6c3]/8 px-3 py-1 text-[11px] uppercase tracking-[0.26em] text-[#b7efe1]">
               <Sparkles className="h-3.5 w-3.5" />
               Live honesty layer
             </div>
-            <div className="mt-6 rounded-[1.8rem] border border-[#d4a85c]/12 bg-[#131922]/94 p-6 shadow-[0_0_60px_rgba(212,168,92,0.08)]">
+            <div className="mt-6 rounded-[1.8rem] border border-[#8fd6c3]/12 bg-[#0c171b]/94 p-6 shadow-[0_0_60px_rgba(143,214,195,0.08)]">
               <div className="text-[11px] uppercase tracking-[0.28em] text-white/38">Harsh Truth</div>
               <p className="mt-5 text-[1.06rem] leading-9 text-white/88">
                 Your customer-facing background is real value. But this data analyst role expects SQL, dashboards, and analysis work you have not shown yet. That gap is real. Let&apos;s find spreadsheet, reporting, or coursework evidence that actually belongs to you.
@@ -89,13 +89,13 @@ export default function LandingPage() {
 
             <div className="mt-5 grid gap-4">
               <div className="liquid-subtle rounded-[1.5rem] p-5">
-                <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Pros</div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-[#b7efe1]">Pros</div>
                 <div className="mt-3 text-sm leading-7 text-white/72">
                   Customer communication, high-volume operations, reliability under pressure.
                 </div>
               </div>
               <div className="liquid-subtle rounded-[1.5rem] p-5">
-                <div className="text-[11px] uppercase tracking-[0.24em] text-[#efcf94]">Verification Prompt</div>
+                <div className="text-[11px] uppercase tracking-[0.24em] text-[#b7efe1]">Verification Prompt</div>
                 <div className="mt-3 text-sm leading-7 text-white/72">
                   Did you ever use Excel or Google Sheets to track inventory, sales, scheduling, or team performance?
                 </div>

@@ -17,6 +17,18 @@ function fallbackQuestionForGap(gap) {
     return "Have you used Excel, Google Sheets, or another tool to organize data, build reports, or analyze results in class, work, or a project?";
   }
 
+  if (lower.includes("recruit")) {
+    return "Did you ever screen applicants, coordinate schedules, organize events, mentor participants, or handle follow-up communication that maps to recruiting work?";
+  }
+
+  if (lower.includes("audit") || lower.includes("account")) {
+    return "Did you do any financial reconciliation, documentation review, tax prep, treasury work, or Excel-heavy coursework that would help prove this requirement honestly?";
+  }
+
+  if (lower.includes("project") || lower.includes("stakeholder")) {
+    return "Did you ever track timelines, owners, weekly updates, or deliverables across a project, club, class team, or part-time job?";
+  }
+
   return `Have you done anything in school, work, volunteering, or projects that connects to ${gap}?`;
 }
 
@@ -60,4 +72,3 @@ module.exports = {
   generateVerificationQuestions,
   verifyInterviewAnswer
 };
-

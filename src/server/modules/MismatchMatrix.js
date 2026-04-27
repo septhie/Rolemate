@@ -61,10 +61,13 @@ function getAliases(keyword) {
     ],
     excel: ["spreadsheets", "google sheets", "metrics", "tracked engagement", "tableau", "workpapers"],
     analytics: ["google analytics", "tracked engagement", "performance reporting", "dashboard", "tableau", "survey data", "user feedback"],
+    "analytical skills": ["analytics", "excel", "reporting", "survey data", "financial analysis"],
     python: ["python scripts", "automation"],
     react: ["frontend features", "frontend", "web applications"],
     marketing: ["campaign", "brand", "social media"],
     writing: ["content", "copy", "social media"],
+    "social media management": ["social media", "content calendar", "engagement"],
+    "market research": ["user feedback", "survey data", "research"],
     organization: [
       "content calendar",
       "content calendars",
@@ -80,6 +83,8 @@ function getAliases(keyword) {
       "matched mentors"
     ],
     collaboration: ["cross-functional", "teamwork", "worked with", "partnered", "sales and support", "volunteers", "mentors"],
+    "project coordination": ["timelines", "deliverables", "status notes", "program management", "events"],
+    "stakeholder management": ["cross-functional", "weekly status notes", "client relationships", "partnered"],
     apis: ["api integrations", "api", "rest"],
     git: ["github", "version control"],
     debugging: ["troubleshooting", "fixed bugs", "bug fixes", "qa", "tested", "ticket escalations", "endpoint issues"],
@@ -87,12 +92,24 @@ function getAliases(keyword) {
     scheduling: ["scheduled", "scheduling", "weekly status notes", "events", "matched mentors"],
     "security fundamentals": ["security+", "wireshark", "splunk", "kali linux", "home lab"],
     "log analysis": ["splunk", "logs", "wireshark"],
+    "siem tools": ["splunk", "siem", "alert triage"],
+    siem: ["splunk", "siem tools", "alert triage"],
+    "project tracking": ["timelines", "tracked deliverables", "status notes", "project coordination"],
+    "stakeholder updates": ["weekly status notes", "cross-functional", "client relationships"],
+    "incident response": ["ticket escalations", "endpoint issues", "troubleshooting", "it support"],
+    recruiting: ["mentoring", "matched mentors", "participant communication", "events", "front desk"],
+    auditing: ["audit testing", "documentation review", "auditing", "workpapers"],
+    bookkeeping: ["treasurer", "tax returns", "tracked funds"],
     ticketing: ["tickets", "ticket escalations", "it support"],
     troubleshooting: ["endpoint issues", "troubleshooting", "it support"],
     leadership: ["shift lead", "trained new hires", "president", "treasurer", "led a campus fundraiser"]
   };
 
   return aliasMap[lower] || [];
+}
+
+function hasAny(corpus, patterns = []) {
+  return patterns.some((pattern) => keywordAppears(corpus, pattern) || mapTransferableGap(pattern, corpus));
 }
 
 function mapTransferableGap(gap, corpus) {
@@ -155,39 +172,54 @@ function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
 
   const hasInternship = /intern/.test(corpus);
   const hasProjects = structuredResume.projects?.length > 0;
+  const hasCertifications = structuredResume.certifications?.length > 0;
+  const educationText = (structuredResume.education || [])
+    .flatMap((entry) => [entry.degree, ...(entry.bullets || [])])
+    .join(" ")
+    .toLowerCase();
 
   if (/software|engineer|developer/.test(title)) {
     if (hasInternship) score += 18;
     if (hasProjects) score += 12;
     if (/react|javascript|python|api/.test(corpus)) score += 12;
+    if (hasAny(corpus, ["git", "debugging", "testing", "cloud deployment"])) score += 8;
   } else if (/data|analyst/.test(title)) {
     if (/sql|python|tableau|dashboard|analytics|survey data/.test(corpus)) score += 22;
     if (hasProjects) score += 10;
+    if (/statistics|data science|economics|excel/.test(educationText)) score += 8;
   } else if (/marketing|brand|content|social/.test(title)) {
     if (hasInternship) score += 20;
     if (/social media|analytics|campaign|brand|google analytics/.test(corpus)) score += 18;
     if (structuredResume.certifications?.length) score += 8;
+    if (hasAny(corpus, ["writing", "organization", "communication"])) score += 8;
   } else if (/investment|banking|finance|analyst/.test(title)) {
     if (/finance|economics|accounting/.test(corpus)) score += 12;
     if (/excel|valuation|modeling|powerpoint/.test(corpus)) score += 18;
+    if (/gpa/.test(educationText)) score += 4;
   } else if (/operations|coordinator/.test(title)) {
     if (/inventory|scheduling|trained|shift lead|customer issues|operations|deliverables/.test(corpus)) score += 24;
     if (/communication|customer service|front desk|coordinated/.test(corpus)) score += 10;
+    if (hasAny(corpus, ["organization", "leadership", "project tracking"])) score += 8;
   } else if (/recruit|talent/.test(title)) {
     if (/organized events|communicated weekly|front desk|matched mentors|president/.test(corpus)) score += 24;
     if (/scheduling|mentoring|participants|medical office/.test(corpus)) score += 10;
+    if (hasAny(corpus, ["communication", "organization", "leadership"])) score += 8;
   } else if (/audit|account/.test(title)) {
     if (/accounting|auditing|excel|vita|tax|treasurer/.test(corpus)) score += 24;
     if (/volunteer|documentation|detail/.test(corpus)) score += 8;
+    if (/financial accounting|auditing|accounting/.test(educationText)) score += 10;
   } else if (/soc|security/.test(title)) {
     if (/security\+|splunk|wireshark|kali linux|home lab/.test(corpus)) score += 26;
     if (/ticket|troubleshooting|endpoint|it support/.test(corpus)) score += 12;
+    if (hasCertifications) score += 8;
   } else if (/project|program/.test(title)) {
     if (/timeline|deliverables|status notes|cross-functional|volunteers|program management/.test(corpus)) score += 26;
     if (/organization|communication|tracked/.test(corpus)) score += 8;
+    if (hasAny(corpus, ["leadership", "stakeholder updates", "project tracking"])) score += 8;
   } else if (/product manager/.test(title)) {
     if (/user feedback|client relationships|sales and support|renewal/.test(corpus)) score += 18;
     if (/cross-functional|managed/.test(corpus)) score += 8;
+    if (hasAny(corpus, ["analytics", "writing", "organization"])) score += 8;
   }
 
   score = Math.round(score * 0.8 + signalOverlap * 0.2);

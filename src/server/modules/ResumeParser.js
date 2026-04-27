@@ -11,6 +11,8 @@ const knownSkillTerms = [
   "excel",
   "powerpoint",
   "google analytics",
+  "meta ads",
+  "hubspot",
   "google sheets",
   "sql",
   "apis",
@@ -39,12 +41,20 @@ const knownSkillTerms = [
   "siem",
   "project management",
   "analytics",
+  "data visualization",
   "brand marketing",
   "communication",
   "customer service",
   "leadership",
   "debugging",
-  "git"
+  "git",
+  "stakeholder management",
+  "project coordination",
+  "recruiting",
+  "auditing",
+  "bookkeeping",
+  "market research",
+  "writing"
 ];
 
 function normalizeBullet(line) {
@@ -144,13 +154,17 @@ function parseInlineWork(text) {
       continue;
     }
 
-      if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald|shift lead|front desk|treasurer|lead|president)/i.test(sentence)) {
+      if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald|shift lead|front desk|treasurer|lead|president|support specialist|analyst|volunteer tax preparer|customer success|years in)/i.test(sentence)) {
         continue;
       }
 
     const normalizedSentence = sentence.replace(/^work experience:\s*/i, "").trim();
     const roleMatch =
       normalizedSentence.match(/(McDonald's\s+Crew\s+Member)/i) ||
+      normalizedSentence.match(/(customer success associate)/i) ||
+      normalizedSentence.match(/(customer success)/i) ||
+      normalizedSentence.match(/(it support specialist)/i) ||
+      normalizedSentence.match(/(volunteer tax preparer)/i) ||
       normalizedSentence.match(/(front desk assistant)/i) ||
       normalizedSentence.match(/(shift lead)/i) ||
       normalizedSentence.match(/(program management intern)/i) ||
@@ -204,7 +218,7 @@ function parseInlineProjects(text) {
       continue;
     }
 
-    const projectNames = sentence.match(/task manager|portfolio site|api integrations?|internal tools?|home lab|dashboard project|campus fundraiser project/gi) || [];
+    const projectNames = sentence.match(/task manager|portfolio site|api integrations?|internal tools?|home lab|dashboard project|campus fundraiser project|security lab|research project/gi) || [];
     if (projectNames.length) {
       projectNames.forEach((name) => {
         projects.push({
@@ -231,7 +245,7 @@ function parseInlineExtracurriculars(text) {
   const sentences = splitSentences(text);
 
   for (const sentence of sentences) {
-      if (!/(club|student organization|social media for|leadership|volunteer|president|treasurer|mentor|fundraiser)/i.test(sentence)) {
+      if (!/(club|student organization|social media for|leadership|volunteer|president|treasurer|mentor|fundraiser|peer mentor|student government)/i.test(sentence)) {
         continue;
       }
 
@@ -257,6 +271,8 @@ function parseInlineCertifications(text) {
   matches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
   const securityMatches = text.match(/security\+/gi) || [];
   securityMatches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
+  const extraMatches = text.match(/hubspot( certified| certification)?|meta ads( certified| certification)?|aws certified cloud practitioner/gi) || [];
+  extraMatches.forEach((item) => certs.push(item.replace(/\s+/g, " ").trim()));
   return Array.from(new Set(certs));
 }
 

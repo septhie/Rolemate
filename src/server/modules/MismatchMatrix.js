@@ -2,6 +2,10 @@ function normalizeArray(items = []) {
   return items.map((item) => String(item).toLowerCase().trim()).filter(Boolean);
 }
 
+function unique(items = []) {
+  return Array.from(new Set(items.filter(Boolean)));
+}
+
 function getResumeCorpus(structuredResume) {
   return [
     structuredResume.summary || "",
@@ -19,6 +23,22 @@ function getResumeCorpus(structuredResume) {
 
 function keywordAppears(corpus, keyword) {
   return corpus.includes(keyword.toLowerCase());
+}
+
+function getResumeSignals(structuredResume) {
+  return unique(
+    [
+      ...(structuredResume.skills || []),
+      ...(structuredResume.workExperience || []).flatMap((entry) => [entry.role, ...(entry.bullets || [])]),
+      ...(structuredResume.projects || []).flatMap((entry) => [entry.name, ...(entry.bullets || [])]),
+      ...(structuredResume.education || []).flatMap((entry) => [entry.degree, ...(entry.bullets || [])]),
+      ...(structuredResume.extracurriculars || []).flatMap((entry) => [entry.name, entry.role, ...(entry.bullets || [])]),
+      ...(structuredResume.certifications || []),
+      structuredResume.summary || ""
+    ]
+      .filter(Boolean)
+      .map((item) => String(item).toLowerCase())
+  );
 }
 
 function getAliases(keyword) {
@@ -85,6 +105,16 @@ function mapTransferableGap(gap, corpus) {
   return `Transferable evidence found through ${hint}.`;
 }
 
+function scoreSignalOverlap(signals, corpus) {
+  const relevant = signals.filter((signal) => signal.length >= 4);
+  if (!relevant.length) {
+    return 0;
+  }
+
+  const matched = relevant.filter((signal) => keywordAppears(corpus, signal) || mapTransferableGap(signal, corpus));
+  return Math.round((matched.length / relevant.length) * 100);
+}
+
 function scoreCompleteness(structuredResume) {
   const missing = structuredResume.flags?.missingCriticalSections?.length || 0;
   const sparse = structuredResume.flags?.sparseSections?.length || 0;
@@ -102,6 +132,7 @@ function scoreCompleteness(structuredResume) {
 
 function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
   const title = normalizeArray([jobProfile.jobTitle || ""]).join(" ");
+  const resumeSignals = getResumeSignals(structuredResume);
   const responsibilitySignals = normalizeArray(jobProfile.keyResponsibilities || [])
     .flatMap((item) => item.split(/[,/]| and /))
     .map((item) => item.trim())
@@ -120,6 +151,7 @@ function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
 
   const matched = candidateSignals.filter((signal) => keywordAppears(corpus, signal) || mapTransferableGap(signal, corpus));
   let score = Math.round((matched.length / candidateSignals.length) * 100);
+  const signalOverlap = scoreSignalOverlap(resumeSignals, corpus);
 
   const hasInternship = /intern/.test(corpus);
   const hasProjects = structuredResume.projects?.length > 0;
@@ -158,6 +190,7 @@ function scoreExperienceRelevance(jobProfile, corpus, structuredResume) {
     if (/cross-functional|managed/.test(corpus)) score += 8;
   }
 
+  score = Math.round(score * 0.8 + signalOverlap * 0.2);
   return Math.max(25, Math.min(100, score));
 }
 
@@ -194,7 +227,7 @@ function buildMismatchMatrix(structuredResume, jobProfile) {
 
   const keywordMatchPercent = requiredSkills.length
     ? Math.round(
-        ((directMatches.filter((item) => item.type === "required-skill").length + softGaps.length * 0.5) / requiredSkills.length) * 100
+        ((directMatches.filter((item) => item.type === "required-skill").length + softGaps.length * 0.75) / requiredSkills.length) * 100
       )
     : 100;
 

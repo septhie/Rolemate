@@ -28,6 +28,16 @@ const knownSkillTerms = [
   "inventory",
   "ticket escalations",
   "troubleshooting",
+  "project tracking",
+  "stakeholder updates",
+  "cross-functional",
+  "teamwork",
+  "attention to detail",
+  "documentation review",
+  "audit testing",
+  "log analysis",
+  "siem",
+  "project management",
   "analytics",
   "brand marketing",
   "communication",
@@ -126,7 +136,7 @@ function parseInlineWork(text) {
   const workEntries = [];
 
   for (const sentence of sentences) {
-    if (/^no internships?\.?$/i.test(sentence) || /^no experience\.?$/i.test(sentence)) {
+    if (/^no internships?\b/i.test(sentence) || /^no experience\b/i.test(sentence)) {
       continue;
     }
 
@@ -134,13 +144,17 @@ function parseInlineWork(text) {
       continue;
     }
 
-      if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald|shift lead|front desk|treasurer)/i.test(sentence)) {
+      if (!/(intern|internship|worked|experience|crew member|associate|assistant|coordinator|manager|cashier|startup|mcdonald|shift lead|front desk|treasurer|lead|president)/i.test(sentence)) {
         continue;
       }
 
     const normalizedSentence = sentence.replace(/^work experience:\s*/i, "").trim();
     const roleMatch =
       normalizedSentence.match(/(McDonald's\s+Crew\s+Member)/i) ||
+      normalizedSentence.match(/(front desk assistant)/i) ||
+      normalizedSentence.match(/(shift lead)/i) ||
+      normalizedSentence.match(/(program management intern)/i) ||
+      normalizedSentence.match(/(retail cashier)/i) ||
         normalizedSentence.match(
           /\b([A-Z][A-Za-z&/'-]+(?:\s+[A-Z][A-Za-z&/'-]+){0,3}\s+(?:Intern|Engineer|Crew Member|Assistant|Coordinator|Associate|Manager|Cashier|Analyst|Lead|Treasurer))\b/i
         ) ||
@@ -182,15 +196,15 @@ function parseInlineProjects(text) {
   const projects = [];
 
   for (const sentence of sentences) {
-    if (!/(project|portfolio|task manager|api integration|internal tool|built|created)/i.test(sentence)) {
+    if (!/(project|portfolio|task manager|api integration|internal tool|built|created|home lab|dashboard|fundraiser)/i.test(sentence)) {
       continue;
     }
 
-    if (/(intern|marketing intern|crew member)/i.test(sentence)) {
+    if (/(marketing intern|crew member)/i.test(sentence)) {
       continue;
     }
 
-    const projectNames = sentence.match(/task manager|portfolio site|api integrations?|internal tools?/gi) || [];
+    const projectNames = sentence.match(/task manager|portfolio site|api integrations?|internal tools?|home lab|dashboard project|campus fundraiser project/gi) || [];
     if (projectNames.length) {
       projectNames.forEach((name) => {
         projects.push({

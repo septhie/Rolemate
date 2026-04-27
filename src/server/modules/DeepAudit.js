@@ -22,6 +22,11 @@ function uniqueBy(items, keyFn) {
   });
 }
 
+function isNegativeEvidence(value) {
+  const lower = normalizeLower(value);
+  return /^no\b/.test(lower) || /no internships?\b|no experience\b/.test(lower);
+}
+
 function getAliases(skill) {
   const aliasMap = {
     communication: ["customer service", "presentations", "cross-functional", "teamwork", "social media", "writing"],
@@ -113,7 +118,7 @@ function collectEvidenceSources(structuredResume) {
   const pushEntry = (type, title, detail, bullets = []) => {
     const cleanBullets = (bullets || []).map(normalize).filter(Boolean);
     const summaryText = [title, detail, ...cleanBullets].filter(Boolean).join(". ");
-    if (!summaryText) {
+    if (!summaryText || isNegativeEvidence(summaryText)) {
       return;
     }
 
@@ -127,7 +132,9 @@ function collectEvidenceSources(structuredResume) {
     });
   };
 
-  pushEntry("summary", "Summary", structuredResume.summary || "");
+  if (!isNegativeEvidence(structuredResume.summary || "")) {
+    pushEntry("summary", "Summary", structuredResume.summary || "");
+  }
 
   (structuredResume.workExperience || []).forEach((entry) => {
     pushEntry(
@@ -165,7 +172,13 @@ function findEvidenceForSkill(skill, sources) {
   const lower = normalizeLower(skill);
   const aliases = getAliases(skill);
 
-  for (const source of sources) {
+  const prioritizedSources = [...sources].sort((left, right) => {
+    const leftSummaryPenalty = left.type === "summary" ? 1 : 0;
+    const rightSummaryPenalty = right.type === "summary" ? 1 : 0;
+    return leftSummaryPenalty - rightSummaryPenalty;
+  });
+
+  for (const source of prioritizedSources) {
     if (source.text.includes(lower)) {
       return {
         status: "direct",
@@ -176,7 +189,7 @@ function findEvidenceForSkill(skill, sources) {
   }
 
   for (const alias of aliases) {
-    const found = sources.find((source) => source.text.includes(alias));
+    const found = prioritizedSources.find((source) => source.text.includes(alias));
     if (found) {
       return {
         status: "transferable",
@@ -222,10 +235,25 @@ function buildSkillAudit(jobProfile, sources) {
   );
 }
 
+function getSourceQuality(source) {
+  let score = 0;
+  if (source.type === "experience") score += 5;
+  if (source.type === "project") score += 4;
+  if (source.type === "activity") score += 3;
+  if (source.type === "certification") score += 3;
+  if (source.type === "education") score += 2;
+  if (source.type === "summary") score += 1;
+  score += Math.min((source.bullets || []).length, 3);
+  if (isNegativeEvidence(source.displayText)) score -= 10;
+  return score;
+}
+
 function getTopEvidenceItems(sources) {
   return sources
     .filter((item) => item.type === "experience" || item.type === "project" || item.type === "activity")
     .filter((item) => item.displayText.length > 10)
+    .filter((item) => !isNegativeEvidence(item.displayText))
+    .sort((left, right) => getSourceQuality(right) - getSourceQuality(left))
     .slice(0, 6);
 }
 
@@ -247,6 +275,10 @@ function buildHonestAssessment({ fitScore, structuredResume, skillAudit, jobProf
     return `**Honest Assessment**\n- This is a real stretch right now.\n- Your resume does not yet prove ${firstGap}, which is central to ${roleTitle}.\n- The best path is to apply honestly, lean on your strongest transferable proof${strongestEvidence ? ` from ${strongestEvidence.title}` : ""}, and build one or two concrete bridge pieces before expecting strong odds.`;
   }
 
+  if (!missing.length && transferable.length >= 2) {
+    return `**Honest Assessment**\n- You have a credible adjacent fit.\n- The resume is already pointing in the right direction, but some of the strongest evidence is still implied instead of stated directly.\n- This is less about becoming qualified and more about making your proof easier to see fast.`; 
+  }
+
   if (fitScore < 65) {
     const firstGap = missing[0]?.skill || transferable[0]?.skill || "a few core requirements";
     return `**Honest Assessment**\n- You have a believable foundation, but this is not a clean match yet.\n- The resume gives evidence for ${directCount} core requirement${directCount === 1 ? "" : "s"}, but ${firstGap} still needs clearer proof.\n- Tightening the resume around actual evidence and filling the top one or two gaps would make this application much stronger.`;
@@ -259,11 +291,31 @@ function buildPressureQuestions(skillAudit, structuredResume, jobProfile) {
   const evidenceItems = getTopEvidenceItems(collectEvidenceSources(structuredResume));
   const anchor = evidenceItems[0];
   const gaps = skillAudit.filter((item) => item.status === "missing").slice(0, 2);
+  const softCandidates = skillAudit.filter((item) => item.status === "transferable");
 
-  return gaps.map((gap) => {
+  if (!gaps.length && softCandidates.length) {
+    return softCandidates.slice(0, 2).map((gap) => {
+      const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
+      return `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${fallbackContext}?`;
+    });
+  }
+
+  const questions = gaps.map((gap) => {
     const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
     return `The JD requires ${gap.skill}, but your resume mainly shows ${fallbackContext}. How would you handle a day-one task that depends on ${gap.skill} without overstating what you already know?`;
   });
+
+  let transferableIndex = 0;
+  while (questions.length < 2 && transferableIndex < softCandidates.length) {
+    const gap = softCandidates[transferableIndex];
+    const fallbackContext = anchor ? `${anchor.title}` : "your current resume evidence";
+    questions.push(
+      `You have adjacent proof for ${gap.skill}, but it is still indirect. If an interviewer pushed you on ${gap.skill}, what concrete example would you use beyond ${fallbackContext}?`
+    );
+    transferableIndex += 1;
+  }
+
+  return questions;
 }
 
 function buildExperienceQuestions(structuredResume, jobProfile) {
@@ -272,7 +324,8 @@ function buildExperienceQuestions(structuredResume, jobProfile) {
 
   return sources.slice(0, 3).map((item, index) => {
     const responsibility = shortenResponsibility(responsibilities[index] || responsibilities[0] || "the kind of work this role will expect");
-    return `You mentioned ${item.title}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
+    const label = item.title.length > 80 ? item.title.slice(0, 80).trim() : item.title;
+    return `You mentioned ${label}. What was the biggest bottleneck you hit there, and how would that experience help you with ${responsibility}?`;
   });
 }
 
@@ -370,10 +423,98 @@ function inferOutcomeHint(text) {
   return "";
 }
 
+function inferRewriteFromContext(original, context) {
+  const lowerOriginal = normalizeLower(original);
+  const lowerContext = normalizeLower(context);
+
+  if (/finance major/.test(lowerOriginal)) {
+    const gpa = original.match(/gpa\s*([0-4]\.\d{1,2})/i);
+    return gpa ? `Finance major with a ${gpa[1]} GPA.` : "Finance major with relevant academic grounding.";
+  }
+
+  if (/data science student/.test(lowerOriginal)) {
+    return "Data science student with coursework aligned to analytics and reporting work.";
+  }
+
+  if (/customer success/.test(lowerOriginal)) {
+    return "Built several years of customer-facing experience managing enterprise relationships and surfacing user needs.";
+  }
+
+  if (/front desk assistant/.test(lowerOriginal)) {
+    return "Worked as a front desk assistant in a medical office, handling day-to-day communication and coordination.";
+  }
+
+  if (/retail cashier/.test(lowerOriginal)) {
+    return "Worked as a retail cashier in a fast-paced environment where accuracy and customer communication mattered.";
+  }
+
+  if (/shift lead/.test(lowerOriginal)) {
+    return "Served as a shift lead with hands-on responsibility for day-to-day coordination and team support.";
+  }
+
+  if (/volunteer tax preparer/.test(lowerOriginal)) {
+    return "Prepared tax returns through VITA, giving you hands-on exposure to detail-oriented financial work.";
+  }
+
+  if (/treasurer/.test(lowerOriginal)) {
+    return "Served as treasurer for a student organization, which is stronger when framed around tracking funds or reporting.";
+  }
+
+  if (/program management intern/.test(lowerOriginal)) {
+    return "Supported program management work and should name the timelines, deliverables, and coordination you directly owned.";
+  }
+
+  if (/president of the student mentoring club/.test(lowerOriginal) || /student mentoring club/.test(lowerOriginal)) {
+    return "Led student mentoring efforts with clearer room to name scheduling, communication, and follow-through.";
+  }
+
+  if (/security\+/.test(lowerOriginal)) {
+    return "Earned Security+ certification to back up your security fundamentals with recognized proof.";
+  }
+
+  if (/home lab/.test(lowerOriginal)) {
+    return "Built home lab projects using security tools you can walk through step by step in an interview.";
+  }
+
+  if (/built a class dashboard project/i.test(lowerOriginal)) {
+    return "Built a Tableau dashboard project and cleaned survey data in Python, which is stronger when framed around the question you were trying to answer.";
+  }
+
+  if (/coursework in financial accounting, auditing, and excel/i.test(lowerOriginal)) {
+    return "Completed coursework in financial accounting, auditing, and Excel that is worth tying to specific deliverables or workpapers.";
+  }
+
+  if (/ran weekly status notes/i.test(lowerOriginal)) {
+    return "Ran weekly status notes that kept timelines, owners, and follow-through visible.";
+  }
+
+  if (/worked with cross-functional teams/i.test(lowerOriginal)) {
+    return "Worked with cross-functional teams and should make the coordination point more explicit.";
+  }
+
+  if (/internship in campus it support/i.test(lowerOriginal)) {
+    return "Supported campus IT operations, troubleshooting endpoint issues and handling escalated tickets.";
+  }
+
+  if (/security fundamentals/i.test(lowerOriginal)) {
+    return "Built security fundamentals through certification work and hands-on lab tooling.";
+  }
+
+  if (/summary/.test(lowerContext)) {
+    return "";
+  }
+
+  return "";
+}
+
 function tightenRewrite(original, context) {
   const cleanContext = normalize(context);
   const contextRole = cleanContext.split(" at ")[0] || cleanContext;
   let rewrite = original.replace(/\baPI\b/g, "API").trim();
+  const inferredRewrite = inferRewriteFromContext(rewrite, cleanContext);
+  if (inferredRewrite) {
+    return inferredRewrite;
+  }
 
   rewrite = rewrite
     .replace(/^internship experience:\s*/i, "")
@@ -384,11 +525,11 @@ function tightenRewrite(original, context) {
     .replace(/^senior marketing major/i, "Senior marketing major");
 
   if (/^wrote python scripts/i.test(rewrite)) {
-    rewrite = "Wrote Python scripts to automate repeatable work and support internal tooling";
+    rewrite = "Wrote Python scripts that automated repeatable work and supported internal tooling";
   } else if (/^built frontend features/i.test(rewrite)) {
-    rewrite = "Built frontend features in React that supported live product work";
+    rewrite = "Built React frontend features that supported live product work";
   } else if (/^shipped internal tools/i.test(rewrite)) {
-    rewrite = "Shipped internal tools that made day-to-day execution easier for the team";
+    rewrite = "Shipped internal tools used to support day-to-day team execution";
   } else if (/^ran social media/i.test(rewrite)) {
     rewrite = "Ran social media operations with clearer ownership over posting and engagement tracking";
   } else if (/^created campaign calendars/i.test(rewrite)) {
@@ -413,6 +554,8 @@ function tightenRewrite(original, context) {
     rewrite = rewrite.charAt(0).toUpperCase() + rewrite.slice(1);
   } else if (/^(marketing intern|brand marketing intern|software engineering intern|mcdonald'?s crew member)/i.test(rewrite)) {
     rewrite = `${rewrite.charAt(0).toUpperCase() + rewrite.slice(1)} with responsibilities that are worth making more explicit`;
+  } else if (/^(five years in|two years as|summer job as|coursework in|junior data science student|accounting junior|psychology senior)/i.test(rewrite)) {
+    rewrite = rewrite.charAt(0).toUpperCase() + rewrite.slice(1);
   } else {
     rewrite = `Showed ${rewrite.charAt(0).toLowerCase()}${rewrite.slice(1)}`;
   }
@@ -446,7 +589,7 @@ function explainRewrite(original, rewrite) {
     return "This keeps the fact pattern intact while making the line easier to scan.";
   }
 
-  if (/\b(track|report|analy|manage|coordinate|build|develop|lead)\b/i.test(rewrite)) {
+  if (/\b(track|report|analy|manage|coordinate|build|develop|lead|support|prepare|work)\b/i.test(rewrite)) {
     return "This version leads with the action and makes the evidence easier for a hiring lead to trust quickly.";
   }
 
@@ -455,6 +598,7 @@ function explainRewrite(original, rewrite) {
 
 function buildBulletRewrites(structuredResume) {
   return collectRewriteCandidates(structuredResume)
+    .filter((item) => !isNegativeEvidence(item.original))
     .slice(0, 5)
     .map((item) => {
       const rewrite = tightenRewrite(item.original, item.context);
@@ -488,6 +632,26 @@ function buildMissing(skillAudit) {
     .filter((item) => item.status === "missing")
     .slice(0, 5)
     .map((item) => `${item.skill}: ${item.bridgeRecommendation}`);
+}
+
+function buildQuestionFallbacks(interviewQuestions, structuredResume, jobProfile) {
+  const roleTitle = normalize(jobProfile.jobTitle || "this role");
+  const evidenceItems = getTopEvidenceItems(collectEvidenceSources(structuredResume));
+  const fallbackQuestions = [...interviewQuestions];
+
+  if (fallbackQuestions.length < 5 && evidenceItems[0]) {
+    fallbackQuestions.push(
+      `What part of ${evidenceItems[0].title} gives you the strongest argument that you could ramp into ${roleTitle} quickly?`
+    );
+  }
+
+  while (fallbackQuestions.length < 5) {
+    fallbackQuestions.push(
+      `Which part of your current background best prepares you for ${roleTitle}, and where would you need the most ramp time?`
+    );
+  }
+
+  return uniqueBy(fallbackQuestions, (item) => normalizeLower(item)).slice(0, 5);
 }
 
 function buildAuditMarkdown({ honestAssessment, skillAudit, interviewQuestions, bulletRewrites }) {
@@ -532,13 +696,7 @@ function generateDeepAudit({ structuredResume, jobProfile, mismatchMatrix }) {
       `What would you say if an interviewer asked you to prove ${fallbackSkill} from the resume you submitted today?`
     );
   }
-  while (experienceQuestions.length < 3) {
-    const roleTitle = normalize(jobProfile.jobTitle || "this role");
-    experienceQuestions.push(
-      `Which part of your current background best prepares you for ${roleTitle}, and where would you need the most ramp time?`
-    );
-  }
-  const interviewQuestions = [...pressureQuestions, ...experienceQuestions].slice(0, 5);
+  const interviewQuestions = buildQuestionFallbacks([...pressureQuestions, ...experienceQuestions], structuredResume, jobProfile);
   const bulletRewrites = buildBulletRewrites(structuredResume);
   const honestAssessment = buildHonestAssessment({
     fitScore: mismatchMatrix.fitScore,

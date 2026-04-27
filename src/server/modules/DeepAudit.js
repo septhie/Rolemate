@@ -27,6 +27,11 @@ function isNegativeEvidence(value) {
   return /^no\b/.test(lower) || /no internships?\b|no experience\b/.test(lower);
 }
 
+function isWeakAnchor(value) {
+  const lower = normalizeLower(value);
+  return isNegativeEvidence(lower) || lower === "summary" || lower === "extracurricular involvement" || lower.length < 4;
+}
+
 function getAliases(skill) {
   const aliasMap = {
     communication: ["customer service", "presentations", "cross-functional", "teamwork", "social media", "writing"],
@@ -253,6 +258,7 @@ function getTopEvidenceItems(sources) {
     .filter((item) => item.type === "experience" || item.type === "project" || item.type === "activity")
     .filter((item) => item.displayText.length > 10)
     .filter((item) => !isNegativeEvidence(item.displayText))
+    .filter((item) => !isWeakAnchor(item.title))
     .sort((left, right) => getSourceQuality(right) - getSourceQuality(left))
     .slice(0, 6);
 }
@@ -432,9 +438,13 @@ function inferRewriteFromContext(original, context) {
     return gpa ? `Finance major with a ${gpa[1]} GPA.` : "Finance major with relevant academic grounding.";
   }
 
-  if (/data science student/.test(lowerOriginal)) {
-    return "Data science student with coursework aligned to analytics and reporting work.";
-  }
+    if (/data science student/.test(lowerOriginal)) {
+      return "Data science student with coursework aligned to analytics and reporting work.";
+    }
+
+    if (/coursework in statistics, python, sql, and data visualization/.test(lowerOriginal)) {
+      return "Completed coursework in statistics, Python, SQL, and data visualization, which is strongest when paired with a concrete analysis deliverable.";
+    }
 
   if (/customer success/.test(lowerOriginal)) {
     return "Built several years of customer-facing experience managing enterprise relationships and surfacing user needs.";
@@ -444,9 +454,13 @@ function inferRewriteFromContext(original, context) {
     return "Worked as a front desk assistant in a medical office, handling day-to-day communication and coordination.";
   }
 
-  if (/retail cashier/.test(lowerOriginal)) {
-    return "Worked as a retail cashier in a fast-paced environment where accuracy and customer communication mattered.";
-  }
+    if (/retail cashier/.test(lowerOriginal)) {
+      return "Worked as a retail cashier in a fast-paced environment where accuracy and customer communication mattered.";
+    }
+
+    if (/retail cashier and shift lead/.test(lowerOriginal)) {
+      return "Worked as a retail cashier and shift lead, combining customer-facing execution with day-to-day team support.";
+    }
 
   if (/shift lead/.test(lowerOriginal)) {
     return "Served as a shift lead with hands-on responsibility for day-to-day coordination and team support.";
@@ -476,9 +490,17 @@ function inferRewriteFromContext(original, context) {
     return "Built home lab projects using security tools you can walk through step by step in an interview.";
   }
 
-  if (/built a class dashboard project/i.test(lowerOriginal)) {
-    return "Built a Tableau dashboard project and cleaned survey data in Python, which is stronger when framed around the question you were trying to answer.";
-  }
+    if (/built a class dashboard project/i.test(lowerOriginal)) {
+      return "Built a Tableau dashboard project and cleaned survey data in Python, which is stronger when framed around the question you were trying to answer.";
+    }
+
+    if (/marketing intern at a consumer startup/.test(lowerOriginal)) {
+      return "Supported marketing work at a consumer startup and should name the campaigns, calendars, or reporting you directly owned.";
+    }
+
+    if (/brand marketing intern at a retail company/.test(lowerOriginal)) {
+      return "Supported brand marketing work at a retail company and should tie it to the campaign or reporting work you actually handled.";
+    }
 
   if (/coursework in financial accounting, auditing, and excel/i.test(lowerOriginal)) {
     return "Completed coursework in financial accounting, auditing, and Excel that is worth tying to specific deliverables or workpapers.";
@@ -528,6 +550,8 @@ function tightenRewrite(original, context) {
     rewrite = "Wrote Python scripts that automated repeatable work and supported internal tooling";
   } else if (/^built frontend features/i.test(rewrite)) {
     rewrite = "Built React frontend features that supported live product work";
+  } else if (/^built a class dashboard project/i.test(rewrite)) {
+    rewrite = "Built a Tableau dashboard project and cleaned survey data in Python";
   } else if (/^shipped internal tools/i.test(rewrite)) {
     rewrite = "Shipped internal tools used to support day-to-day team execution";
   } else if (/^ran social media/i.test(rewrite)) {
@@ -571,7 +595,7 @@ function tightenRewrite(original, context) {
   }
 
   const outcomeHint = inferOutcomeHint(`${original} ${cleanContext}`);
-  if (outcomeHint && !normalizeLower(rewrite).includes(normalizeLower(outcomeHint))) {
+  if (outcomeHint && !/[,.]\s+and\s+/.test(normalizeLower(rewrite)) && !normalizeLower(rewrite).includes(normalizeLower(outcomeHint))) {
     rewrite = `${rewrite} ${outcomeHint}`;
   }
 

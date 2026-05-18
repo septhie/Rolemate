@@ -1,6 +1,7 @@
 import "./globals.css";
 import { JetBrains_Mono, Playfair_Display } from "next/font/google";
 import SiteHeader from "@/components/SiteHeader";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const mono = JetBrains_Mono({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({ children }) {
           <SiteHeader />
           {children}
         </div>
+        <SpeedInsights />
       </body>
     </html>
   );
